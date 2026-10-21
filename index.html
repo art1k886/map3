@@ -203,10 +203,10 @@
       background: #ffffff;
       border-radius: 8px;
       border: 2px solid #000000;
-      padding: 10px 14px;
+      padding: 7px 11px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 4px;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
       pointer-events: none;
       user-select: none;
@@ -225,31 +225,31 @@
 
     .disclaimer-text {
       color: #1a1a1a;
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 700;
-      line-height: 1.35;
+      line-height: 1.3;
       white-space: pre-wrap;
     }
 
     .legend-items {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px 14px;
-      padding-top: 4px;
+      gap: 4px 10px;
+      padding-top: 2px;
     }
 
     .legend-item {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       color: #0f172a;
       font-size: 12px;
       font-weight: 800;
     }
 
     .legend-item img {
-      width: 20px;
-      height: 20px;
+      width: 17px;
+      height: 17px;
       object-fit: contain;
     }
 
@@ -578,6 +578,11 @@
 
 <div id="map"></div>
 <div id="watermark-layer"></div>
+<div id="drop-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(37,99,235,0.18);border:4px dashed #60a5fa;pointer-events:none;align-items:center;justify-content:center;">
+  <div style="background:rgba(18,18,18,0.95);color:#f1f5f9;padding:24px 36px;border-radius:14px;font-size:18px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;border:2px solid #60a5fa;">
+    ⬆ Відпустіть файл налаштувань
+  </div>
+</div>
 
 <button class="settings-btn" id="settings-btn" title="Налаштування">
   <svg viewBox="0 0 24 24">
@@ -705,7 +710,7 @@
 
     <div class="settings-row">
       <div class="settings-label">Коло 1км для БПЛА
-        <small>Пунктирне коло діаметром 1км навколо дронів</small>
+        <small>Коло діаметром 1км навколо дронів</small>
       </div>
       <label class="toggle">
         <input type="checkbox" id="drone-500m-enabled" checked>
@@ -790,17 +795,23 @@
       </div>
     </div>
   </div>
+
+  <div class="settings-group">
+    <div class="settings-group-title">Файл налаштувань</div>
+    <div class="settings-label" style="color:#94a3b8;font-size:10px;line-height:1.4;">Збережіть усі налаштування у .txt файл, або перетягніть раніше збережений файл у вікно браузера щоб відновити.</div>
+    <button id="export-settings-btn" style="background:#2563eb;color:white;border:none;border-radius:6px;padding:8px 10px;font-size:11px;font-weight:700;cursor:pointer;width:100%;font-family:inherit;">⬇ Завантажити settings.txt</button>
+  </div>
 </div>
 
 <div class="controls-panel" id="ui-panel">
   <div class="panel-section">
-    <div class="panel-title">Нові іконки</div>
+    <div class="panel-title">Додати об'єкт</div>
     <div class="icons-grid">
-      <button class="icon-btn" onclick="addIconMarker('new1.png', 'Шахед')">
-        <img src="icons/new1.png" alt="Шахед"> Шахед
+      <button class="icon-btn" onclick="addIconMarker('gerbera.png', 'Гербера')">
+        <img src="icons/gerbera.png" alt="Гербера"> Гербера
       </button>
-      <button class="icon-btn" onclick="addIconMarker('new2.png', 'Реактивний')">
-        <img src="icons/new2.png" alt="Реактивний"> Реактивний
+      <button class="icon-btn" onclick="addIconMarker('bp.png', 'Ударний Бп')">
+        <img src="icons/bp.png" alt="Ударний Бп"> Ударний Бп
       </button>
       <button class="icon-btn" onclick="addIconMarker('banderola.png', 'Бандероль')">
         <img src="icons/banderola.png" alt="Бандероль"> Бандероль
@@ -814,12 +825,7 @@
       <button class="icon-btn" onclick="addIconMarker('avia.png', 'Т/А')">
         <img src="icons/avia.png" alt="Т/А"> Т/А
       </button>
-    </div>
-  </div>
 
-  <div class="panel-section">
-    <div class="panel-title">Додати об'єкт</div>
-    <div class="icons-grid">
       <button class="icon-btn" onclick="addIconMarker('зала.png', 'Зала')">
         <img src="icons/зала.png" alt="Зала"> Зала
       </button>
@@ -883,7 +889,7 @@
   const SHOSTKA_CENTER = [33.4729, 51.8638];
   const TARGET_ZOOM = 9.3;
 
-  const STORAGE_KEY = 'shostka_map_settings_v9';
+  const STORAGE_KEY = 'shostka_map_settings_v11';
 
   let activeFeatures = [];
   let activeTrajectories = [];
@@ -899,8 +905,9 @@
   let gromadyData = null;
 
   const ICON_AUTO_COLORS = {
-    'new1.png': '#ef4444',
-    'new2.png': '#38bdf8',
+    'gerbera.png': '#ef4444',
+    'гербера.png': '#ef4444',
+    'bp.png': '#ef4444',
     'banderola.png': '#f97316',
     'kab.png': '#eab308',
     'orlan.png': '#94a3b8',
@@ -1025,6 +1032,12 @@
     } catch (e) {
       return JSON.parse(JSON.stringify(defaultSettings));
     }
+  }
+
+  let _saveTimer = null;
+  function scheduleSave() {
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(() => saveSettings(), 300);
   }
 
   function saveSettings() {
@@ -1431,9 +1444,7 @@
     } catch(e) { ukraineGeojson = null; }
 
     // ===== TOWNS LAYER — BELOW ALL OSM ROADS & LABELS =====
-    // Find the first symbol/road layer in the base style to insert before it
     const _allLayers = map.getStyle().layers;
-    // We want to insert BELOW roads and labels: find first road or label layer
     let _firstRoadOrLabel = null;
     for (const l of _allLayers) {
       if (
@@ -1543,7 +1554,6 @@
     });
 
     // ===== CUSTOM PLACES LAYER — BELOW OSM SETTLEMENT LABELS =====
-    // Find first OSM place/settlement symbol layer to insert before it
     const _allLayers2 = map.getStyle().layers;
     let _firstPlaceLabel = null;
     for (const l of _allLayers2) {
@@ -1556,7 +1566,6 @@
         break;
       }
     }
-    // Fallback: first symbol layer
     if (!_firstPlaceLabel) {
       for (const l of _allLayers2) {
         if (l.type === 'symbol') { _firstPlaceLabel = l.id; break; }
@@ -1638,7 +1647,7 @@
     resizeDroneCanvas();
     map.on('resize', resizeDroneCanvas);
 
-    // RADIUS CANVAS
+    // RADIUS CANVAS - PLACED UNDER GL CANVAS (Z-INDEX PRESERVATION)
     const radiusCanvas = document.createElement('canvas');
     radiusCanvas.id = 'radius-canvas';
     radiusCanvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;';
@@ -1686,7 +1695,7 @@
           ctx.beginPath();
           ctx.arc(px, py, radiusPx, 0, Math.PI * 2);
           ctx.strokeStyle = '#b89dc8';
-          ctx.lineWidth = 3.5 * dpr;
+          ctx.lineWidth = 1.2 * dpr;
           ctx.stroke();
           return;
         }
@@ -1701,8 +1710,9 @@
           ctx.beginPath();
           ctx.arc(px, py, radiusPx, 0, Math.PI * 2);
           ctx.strokeStyle = '#b89dc8';
-          ctx.lineWidth = 3.5 * dpr;
+          ctx.lineWidth = 1.2 * dpr;
           ctx.stroke();
+
           return;
         }
 
@@ -1716,8 +1726,23 @@
           ctx.beginPath();
           ctx.arc(px, py, radiusPx, 0, Math.PI * 2);
           ctx.strokeStyle = '#b89dc8';
-          ctx.lineWidth = 2.5 * dpr;
+          ctx.lineWidth = 1.2 * dpr;
           ctx.stroke();
+
+          // Draw "Коло 1км" label BELOW the icon (below the icon bottom edge)
+          const iconHalfPx = 26 * dpr;
+          const labelBelowY = py + iconHalfPx + 2 * dpr;
+          const fontSize500 = 9 * dpr;
+          ctx.save();
+          ctx.font = `700 ${fontSize500}px "Plus Jakarta Sans", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillStyle = '#b89dc8';
+          ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+          ctx.lineWidth = 2 * dpr;
+          ctx.strokeText('', px, labelBelowY);
+          ctx.fillText('', px, labelBelowY);
+          ctx.restore();
         }
       });
     };
@@ -2151,6 +2176,19 @@
     window.addEventListener('resize', () => {
       if (watermarkEnabled.checked) renderWatermark();
     });
+
+    // Always save on page close/refresh
+    window.addEventListener('beforeunload', () => {
+      saveSettings();
+    });
+
+    // Also save map position on close
+    map.on('moveend', () => {
+      try {
+        const c = map.getCenter();
+        localStorage.setItem('shostka_map_view', JSON.stringify({ lng: c.lng, lat: c.lat, zoom: map.getZoom() }));
+      } catch(e) {}
+    });
   });
 
   document.getElementById('settings-btn').addEventListener('click', () => {
@@ -2158,6 +2196,108 @@
     const btn = document.getElementById('settings-btn');
     menu.classList.toggle('open');
     btn.classList.toggle('active');
+  });
+
+  // ===== EXPORT SETTINGS =====
+  document.getElementById('export-settings-btn').addEventListener('click', () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const settings = raw ? JSON.parse(raw) : defaultSettings;
+      const lines = [];
+      lines.push('# Shostka Map Settings Export');
+      lines.push('# Перетягніть цей файл у вікно браузера щоб відновити налаштування');
+      lines.push('');
+      function flatten(obj, prefix) {
+        for (const key of Object.keys(obj)) {
+          const val = obj[key];
+          const fullKey = prefix ? prefix + '.' + key : key;
+          if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+            flatten(val, fullKey);
+          } else {
+            lines.push(fullKey + ' = ' + JSON.stringify(val));
+          }
+        }
+      }
+      flatten(settings, '');
+      const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'shostka-map-settings.txt';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch(e) { alert('Помилка експорту: ' + e.message); }
+  });
+
+  // ===== IMPORT SETTINGS (drag-and-drop txt file) =====
+  const dropOverlay = document.getElementById('drop-overlay');
+
+  document.addEventListener('dragenter', (e) => {
+    if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+      dropOverlay.style.display = 'flex';
+    }
+  });
+  document.addEventListener('dragleave', (e) => {
+    if (e.relatedTarget === null || e.relatedTarget === document.documentElement) {
+      dropOverlay.style.display = 'none';
+    }
+  });
+  document.addEventListener('dragover', (e) => { e.preventDefault(); });
+  document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropOverlay.style.display = 'none';
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file || !file.name.endsWith('.txt')) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target.result;
+        const result = {};
+        for (const line of text.split('\n')) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const eqIdx = trimmed.indexOf(' = ');
+          if (eqIdx === -1) continue;
+          const keyPath = trimmed.slice(0, eqIdx).trim();
+          const valStr = trimmed.slice(eqIdx + 3).trim();
+          let val;
+          try { val = JSON.parse(valStr); } catch(pe) { val = valStr; }
+          // Set nested key
+          const parts = keyPath.split('.');
+          let obj = result;
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!obj[parts[i]] || typeof obj[parts[i]] !== 'object') obj[parts[i]] = {};
+            obj = obj[parts[i]];
+          }
+          obj[parts[parts.length - 1]] = val;
+        }
+        // Merge with defaults
+        const merged = {
+          ...defaultSettings,
+          ...result,
+          customPlaces: { ...defaultSettings.customPlaces, ...(result.customPlaces || {}) },
+          gromady: { ...defaultSettings.gromady, ...(result.gromady || {}) },
+          mask: { ...defaultSettings.mask, ...(result.mask || {}) },
+          disclaimer: { ...defaultSettings.disclaimer, ...(result.disclaimer || {}) },
+          watermark: { ...defaultSettings.watermark, ...(result.watermark || {}) },
+          drone: { ...defaultSettings.drone, ...(result.drone || {}) }
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        applySettings(merged);
+        updateCustomPlacesStyle();
+        updateGromadyStyle();
+        updateMaskStyle();
+        renderDisclaimerPanel();
+        renderWatermark();
+        window.drawRadiusCanvas && window.drawRadiusCanvas();
+        window.drawDroneCanvas && window.drawDroneCanvas();
+        // Show toast
+        const t = document.getElementById('toast');
+        t.textContent = 'Налаштування імпортовано!';
+        t.classList.add('show');
+        setTimeout(() => { t.classList.remove('show'); t.textContent = 'Скриншот скопійовано в буфер обміну!'; }, 2500);
+      } catch(err) { alert('Помилка імпорту файлу: ' + err.message); }
+    };
+    reader.readAsText(file);
   });
 
   async function ensureImageLoaded(fileName) {
@@ -2369,12 +2509,10 @@
     const oldPanelDisplay = uiPanel.style.display;
     const oldSettingsBtnDisplay = settingsBtn.style.display;
     const oldSettingsMenuDisplay = settingsMenu.style.display;
-    const oldLegendDisplay = legendPanel.style.display;
 
     uiPanel.style.display = 'none';
     settingsBtn.style.display = 'none';
     settingsMenu.style.display = 'none';
-    legendPanel.style.display = 'none';
 
     const layer = document.createElement('div');
     layer.id = 'screenshot-selection-layer';
@@ -2395,7 +2533,6 @@
       uiPanel.style.display = oldPanelDisplay;
       settingsBtn.style.display = oldSettingsBtnDisplay;
       settingsMenu.style.display = oldSettingsMenuDisplay;
-      // Let renderDisclaimerPanel decide visibility based on toggle state
       renderDisclaimerPanel();
     };
 
@@ -2510,6 +2647,10 @@
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
+        // Draw map base first
+        ctx.drawImage(mapCanvas, sx, sy, sw, sh, 0, 0, out.width, out.height);
+
+        // Draw radius circles ON TOP of the map
         try {
           const rc = document.getElementById('radius-canvas');
           if (rc) {
@@ -2517,8 +2658,7 @@
           }
         } catch(e) {}
 
-        ctx.drawImage(mapCanvas, sx, sy, sw, sh, 0, 0, out.width, out.height);
-
+        // Draw drone overlays (labels, direction arrows) ON TOP
         try {
           const dc = document.getElementById('drone-canvas');
           if (dc) {
@@ -2528,6 +2668,121 @@
 
         ctx.save();
         ctx.scale(scale, scale);
+
+        // DRAW DISCLAIMER ON SCREENSHOT IF ENABLED
+        if (disclaimerEnabled.checked) {
+          try {
+            const discRect = legendPanel.getBoundingClientRect();
+            const discLeft = discRect.left - left;
+            const discTop = discRect.top - top;
+
+            const discOpacity = parseInt(disclaimerOpacitySlider.value, 10) / 100;
+            const pad = 12;
+            const maxBoxW = Math.min(340, width - 20);
+
+            // Measure text to auto-size the box
+            ctx.save();
+            ctx.font = '700 11.5px "Plus Jakarta Sans", sans-serif';
+            const text = disclaimerTextInput.value;
+            // Word-wrap the text
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = '';
+            const maxTextW = maxBoxW - pad * 2;
+            for (const word of words) {
+              const testLine = currentLine ? currentLine + ' ' + word : word;
+              if (ctx.measureText(testLine).width > maxTextW && currentLine) {
+                lines.push(currentLine);
+                currentLine = word;
+              } else {
+                currentLine = testLine;
+              }
+            }
+            if (currentLine) lines.push(currentLine);
+            ctx.restore();
+
+            const lineH = 15;
+            const textBlockH = lines.length * lineH;
+
+            // Legend icons row
+            const uniqueTypes = [];
+            const seenTypes = new Set();
+            activeFeatures.forEach(f => {
+              const typeName = f.properties.typeName || (f.properties.title || '').replace(/\s+\d+$/, '');
+              const fileName = f.properties.fileName;
+              if (!seenTypes.has(typeName)) {
+                seenTypes.add(typeName);
+                uniqueTypes.push({ typeName, fileName });
+              }
+            });
+
+            const iconSize = 18;
+            const iconRowH = uniqueTypes.length > 0 ? iconSize + 10 : 0;
+            const boxH = pad + textBlockH + (iconRowH > 0 ? 8 + iconRowH : 0) + pad;
+            const boxW = maxBoxW;
+            const discX = Math.max(10, discLeft);
+            const discY = Math.min(height - boxH - 10, Math.max(10, discTop));
+
+            ctx.save();
+            ctx.globalAlpha = discOpacity;
+
+            // Background
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = 'rgba(0,0,0,0.25)';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+              ctx.roundRect(discX, discY, boxW, boxH, 8);
+            } else {
+              ctx.rect(discX, discY, boxW, boxH);
+            }
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+            ctx.stroke();
+
+            // Text lines
+            ctx.fillStyle = '#1a1a1a';
+            ctx.font = '700 11.5px "Plus Jakarta Sans", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            lines.forEach((line, i) => {
+              ctx.fillText(line, discX + pad, discY + pad + i * lineH);
+            });
+
+            // Icons row
+            if (uniqueTypes.length > 0) {
+              const iconY = discY + pad + textBlockH + 8;
+              let iconX = discX + pad;
+              const iconLabelFont = '700 10px "Plus Jakarta Sans", sans-serif';
+              ctx.font = iconLabelFont;
+
+              for (const { typeName, fileName } of uniqueTypes) {
+                const img = map.style.imageManager && map.style.imageManager.images[fileName]
+                  ? null : null; // try from loaded images
+                // Draw icon from loaded map image or skip
+                try {
+                  // Try to get the image element from any img tag on page
+                  const imgEls = document.querySelectorAll(`img[src="icons/${fileName}"]`);
+                  if (imgEls.length > 0 && imgEls[0].complete && imgEls[0].naturalWidth > 0) {
+                    ctx.drawImage(imgEls[0], iconX, iconY, iconSize, iconSize);
+                    iconX += iconSize + 3;
+                  }
+                } catch(ie) {}
+                ctx.fillStyle = '#0f172a';
+                ctx.font = '800 10.5px "Plus Jakarta Sans", sans-serif';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(typeName, iconX, iconY + iconSize / 2);
+                iconX += ctx.measureText(typeName).width + 14;
+                if (iconX > discX + boxW - pad) break;
+              }
+            }
+
+            ctx.restore();
+          } catch(e) {}
+        }
 
         if (watermarkEnabled.checked) {
           try {
