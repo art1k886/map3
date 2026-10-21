@@ -865,6 +865,7 @@
     <div class="batch-actions">
       <button class="btn-secondary" onclick="selectAllObjects(true)">Вибрати всі</button>
       <button class="btn-secondary" onclick="selectAllObjects(false)">Зняти вибір</button>
+      <button class="btn-secondary" onclick="generateCoursesReport()">курси</button>
       <button class="btn-danger" onclick="deleteSelectedObjects()">Видалити</button>
     </div>
 
@@ -903,6 +904,8 @@
   let initialDroneRotation = 0;
 
   let gromadyData = null;
+  let kursDataCache = null;
+  let regionsDataCache = null;
 
   const ICON_AUTO_COLORS = {
     'gerbera.png': '#ef4444',
@@ -1087,7 +1090,6 @@
 
   const savedSettings = loadSettings();
 
-  // ============ MAPTILER VECTOR STYLE ============
   const map = new maplibregl.Map({
     container: 'map',
     preserveDrawingBuffer: true,
@@ -1308,7 +1310,6 @@
     }
   }
 
-  // =========== POINT IN POLYGON ===========
   function pointInPolygon(point, polygon) {
     const x = point[0], y = point[1];
     let inside = false;
@@ -1443,7 +1444,6 @@
       ukraineGeojson = await res.json();
     } catch(e) { ukraineGeojson = null; }
 
-    // ===== TOWNS LAYER — BELOW ALL OSM ROADS & LABELS =====
     const _allLayers = map.getStyle().layers;
     let _firstRoadOrLabel = null;
     for (const l of _allLayers) {
@@ -1471,7 +1471,6 @@
       }
     }, _firstRoadOrLabel || undefined);
 
-    // ===== SOURCES =====
     map.addSource('ukraine-src', { type: 'geojson', data: ukraineGeojson || 'ukraine.geojson' });
     
     if (ukraineGeojson) {
@@ -1497,7 +1496,6 @@
       data: { type: 'FeatureCollection', features: [] }
     });
 
-    // ===== GROMADY HIGHLIGHT =====
     map.addLayer({
       'id': 'gromady-fill',
       'type': 'fill',
@@ -1508,7 +1506,6 @@
       }
     });
 
-    // ===== BORDERS =====
     map.addLayer({
       'id': 'ukraine-border',
       'type': 'line',
@@ -1553,7 +1550,6 @@
       }
     });
 
-    // ===== CUSTOM PLACES LAYER — BELOW OSM SETTLEMENT LABELS =====
     const _allLayers2 = map.getStyle().layers;
     let _firstPlaceLabel = null;
     for (const l of _allLayers2) {
@@ -1612,7 +1608,6 @@
     updateCustomPlacesStyle();
     updateGromadyStyle();
 
-    // TRAJECTORY CANVAS
     const trajCanvas = document.createElement('canvas');
     trajCanvas.id = 'traj-canvas';
     trajCanvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:5;';
@@ -1631,7 +1626,6 @@
     resizeTrajCanvas();
     map.on('resize', resizeTrajCanvas);
 
-    // DRONE OVERLAY CANVAS
     const droneCanvas = document.createElement('canvas');
     droneCanvas.id = 'drone-canvas';
     droneCanvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:6;';
@@ -1647,7 +1641,6 @@
     resizeDroneCanvas();
     map.on('resize', resizeDroneCanvas);
 
-    // RADIUS CANVAS - PLACED UNDER GL CANVAS (Z-INDEX PRESERVATION)
     const radiusCanvas = document.createElement('canvas');
     radiusCanvas.id = 'radius-canvas';
     radiusCanvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;';
@@ -1712,7 +1705,6 @@
           ctx.strokeStyle = '#b89dc8';
           ctx.lineWidth = 1.2 * dpr;
           ctx.stroke();
-
           return;
         }
 
@@ -1729,7 +1721,6 @@
           ctx.lineWidth = 1.2 * dpr;
           ctx.stroke();
 
-          // Draw "Коло 1км" label BELOW the icon (below the icon bottom edge)
           const iconHalfPx = 26 * dpr;
           const labelBelowY = py + iconHalfPx + 2 * dpr;
           const fontSize500 = 9 * dpr;
@@ -2051,7 +2042,6 @@
 
     applySettings(savedSettings);
 
-    // Event Listeners for Custom Places
     [customPlacesEnabled, customPlacesDotsEnabled].forEach(el => {
       el.addEventListener('change', () => {
         updateCustomPlacesStyle();
@@ -2073,7 +2063,6 @@
       });
     });
 
-    // Event Listeners for Gromady
     gromadyHighlightEnabled.addEventListener('change', (e) => {
       settingsGromadyHighlight = e.target.checked;
       updateGromadyHighlight();
@@ -2177,12 +2166,10 @@
       if (watermarkEnabled.checked) renderWatermark();
     });
 
-    // Always save on page close/refresh
     window.addEventListener('beforeunload', () => {
       saveSettings();
     });
 
-    // Also save map position on close
     map.on('moveend', () => {
       try {
         const c = map.getCenter();
@@ -2198,7 +2185,6 @@
     btn.classList.toggle('active');
   });
 
-  // ===== EXPORT SETTINGS =====
   document.getElementById('export-settings-btn').addEventListener('click', () => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -2228,7 +2214,6 @@
     } catch(e) { alert('Помилка експорту: ' + e.message); }
   });
 
-  // ===== IMPORT SETTINGS (drag-and-drop txt file) =====
   const dropOverlay = document.getElementById('drop-overlay');
 
   document.addEventListener('dragenter', (e) => {
@@ -2261,7 +2246,6 @@
           const valStr = trimmed.slice(eqIdx + 3).trim();
           let val;
           try { val = JSON.parse(valStr); } catch(pe) { val = valStr; }
-          // Set nested key
           const parts = keyPath.split('.');
           let obj = result;
           for (let i = 0; i < parts.length - 1; i++) {
@@ -2270,7 +2254,6 @@
           }
           obj[parts[parts.length - 1]] = val;
         }
-        // Merge with defaults
         const merged = {
           ...defaultSettings,
           ...result,
@@ -2290,7 +2273,6 @@
         renderWatermark();
         window.drawRadiusCanvas && window.drawRadiusCanvas();
         window.drawDroneCanvas && window.drawDroneCanvas();
-        // Show toast
         const t = document.getElementById('toast');
         t.textContent = 'Налаштування імпортовано!';
         t.classList.add('show');
@@ -2499,6 +2481,164 @@
     updateGromadyHighlight();
   }
 
+  // ===== КУРСИ — ГЕНЕРАЦІЯ ЗВІТУ =====
+  function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  async function generateCoursesReport() {
+    if (activeFeatures.length === 0) {
+      alert('Немає активних об\'єктів на карті для аналізу курсів.');
+      return;
+    }
+
+    try {
+      if (!kursDataCache) {
+        const res = await fetch('kurs.geojson');
+        kursDataCache = await res.json();
+      }
+      if (!regionsDataCache) {
+        const res = await fetch('regions.geojson');
+        regionsDataCache = await res.json();
+      }
+    } catch (e) {
+      alert('Помилка завантаження kurs.geojson або regions.geojson');
+      return;
+    }
+
+    // Допоміжна функція пошуку області для координат НП
+    function findRegionForPoint(lng, lat) {
+      for (const reg of regionsDataCache.features) {
+        if (pointInFeature([lng, lat], reg)) {
+          return reg.properties.name || reg.properties.NAME || reg.properties.region || 'Область';
+        }
+      }
+      return 'Інша область';
+    }
+
+    // Збираємо дані по кожному об'єкту
+    const reportByRegion = {};
+
+    activeFeatures.forEach(feat => {
+      const [droneLng, droneLat] = feat.geometry.coordinates;
+      const typeName = feat.properties.typeName || (feat.properties.title || '').replace(/\s+\d+$/, '');
+      const heading = getActualHeading(feat.properties.fileName, feat.properties.rotation || 0);
+
+      const matchedPlaces = [];
+
+      kursDataCache.features.forEach(place => {
+        let pLng, pLat;
+        if (place.geometry.type === 'Point') {
+          [pLng, pLat] = place.geometry.coordinates;
+        } else if (place.geometry.type === 'Polygon' || place.geometry.type === 'MultiPolygon') {
+          const ring = place.geometry.type === 'Polygon' ? place.geometry.coordinates[0] : place.geometry.coordinates[0][0];
+          pLng = ring[0][0];
+          pLat = ring[0][1];
+        } else {
+          return;
+        }
+
+        const dist = calculateDistanceKm(droneLat, droneLng, pLat, pLng);
+        if (dist <= 30) {
+          const y = Math.sin((pLng - droneLng) * Math.PI / 180) * Math.cos(pLat * Math.PI / 180);
+          const x = Math.cos(droneLat * Math.PI / 180) * Math.sin(pLat * Math.PI / 180) -
+                    Math.sin(droneLat * Math.PI / 180) * Math.cos(pLat * Math.PI / 180) * Math.cos((pLng - droneLng) * Math.PI / 180);
+          let bearing = Math.atan2(y, x) * 180 / Math.PI;
+          bearing = (bearing + 360) % 360;
+
+          let angleDiff = Math.abs(heading - bearing);
+          if (angleDiff > 180) angleDiff = 360 - angleDiff;
+
+          const placeName = place.properties.name || place.properties.NAME || place.properties.place || 'Н.П.';
+          
+          if (dist <= 1.5 || angleDiff <= 35) {
+            matchedPlaces.push({
+              name: placeName,
+              distance: dist,
+              lng: pLng,
+              lat: pLat
+            });
+          }
+        }
+      });
+
+      matchedPlaces.sort((a, b) => a.distance - b.distance);
+
+      const closestPlaces = matchedPlaces.slice(0, 1);
+
+      if (closestPlaces.length > 0) {
+        closestPlaces.forEach(p => {
+          const regionName = findRegionForPoint(p.lng, p.lat);
+          if (!reportByRegion[regionName]) {
+            reportByRegion[regionName] = [];
+          }
+          reportByRegion[regionName].push({
+            type: typeName,
+            place: p.name
+          });
+        });
+      } else {
+        const defaultRegion = findRegionForPoint(droneLng, droneLat);
+        if (!reportByRegion[defaultRegion]) {
+          reportByRegion[defaultRegion] = [];
+        }
+        reportByRegion[defaultRegion].push({
+          type: typeName,
+          place: null
+        });
+      }
+    });
+
+    // Формуємо кінцевий текстовий звіт з групуванням однаковіх типів + НП
+    let reportLines = [];
+    for (const [region, items] of Object.entries(reportByRegion)) {
+      // Прибираємо дублювання "область область", якщо назва області вже містить слово "область"
+      const regionHeader = region.toLowerCase().includes('область') ? region : `${region} область`;
+      reportLines.push(`${regionHeader}:`);
+
+      // Подсчет количества одинаковых (тип + НП)
+      const counts = new Map();
+      items.forEach(item => {
+        const key = `${item.type}|${item.place || ''}`;
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+
+      counts.forEach((count, key) => {
+        const [type, place] = key.split('|');
+        const countStr = count > 1 ? ` ${count} од.` : '';
+
+        if (place) {
+          reportLines.push(` ◦ ${type} → ${place}${countStr}`);
+        } else {
+          reportLines.push(` ◦ ${type}${count > 1 ? ` ${count} од.` : ' 1 од.'}`);
+        }
+      });
+    }
+
+    const finalReportText = reportLines.join('\n');
+
+    // Копіюємо в буфер обміну та виводимо сповіщення
+    try {
+      await navigator.clipboard.writeText(finalReportText);
+      const t = document.getElementById('toast');
+      t.textContent = 'Звіт курсів скопійовано в буфер!';
+      t.classList.add('show');
+      setTimeout(() => {
+        t.classList.remove('show');
+        t.textContent = 'Скриншот скопійовано в буфер обміну!';
+      }, 3000);
+    } catch (e) {
+      alert(finalReportText);
+    }
+  }
+
   async function takeScreenshot() {
     if (document.getElementById('screenshot-selection-layer')) return;
 
@@ -2647,10 +2787,8 @@
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // Draw map base first
         ctx.drawImage(mapCanvas, sx, sy, sw, sh, 0, 0, out.width, out.height);
 
-        // Draw radius circles ON TOP of the map
         try {
           const rc = document.getElementById('radius-canvas');
           if (rc) {
@@ -2658,7 +2796,6 @@
           }
         } catch(e) {}
 
-        // Draw drone overlays (labels, direction arrows) ON TOP
         try {
           const dc = document.getElementById('drone-canvas');
           if (dc) {
@@ -2669,7 +2806,6 @@
         ctx.save();
         ctx.scale(scale, scale);
 
-        // DRAW DISCLAIMER ON SCREENSHOT IF ENABLED
         if (disclaimerEnabled.checked) {
           try {
             const discRect = legendPanel.getBoundingClientRect();
@@ -2680,11 +2816,9 @@
             const pad = 12;
             const maxBoxW = Math.min(340, width - 20);
 
-            // Measure text to auto-size the box
             ctx.save();
             ctx.font = '700 11.5px "Plus Jakarta Sans", sans-serif';
             const text = disclaimerTextInput.value;
-            // Word-wrap the text
             const words = text.split(' ');
             const lines = [];
             let currentLine = '';
@@ -2704,7 +2838,6 @@
             const lineH = 15;
             const textBlockH = lines.length * lineH;
 
-            // Legend icons row
             const uniqueTypes = [];
             const seenTypes = new Set();
             activeFeatures.forEach(f => {
@@ -2726,7 +2859,6 @@
             ctx.save();
             ctx.globalAlpha = discOpacity;
 
-            // Background
             ctx.fillStyle = '#ffffff';
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 2;
@@ -2743,7 +2875,6 @@
             ctx.shadowColor = 'transparent';
             ctx.stroke();
 
-            // Text lines
             ctx.fillStyle = '#1a1a1a';
             ctx.font = '700 11.5px "Plus Jakarta Sans", sans-serif';
             ctx.textAlign = 'left';
@@ -2752,7 +2883,6 @@
               ctx.fillText(line, discX + pad, discY + pad + i * lineH);
             });
 
-            // Icons row
             if (uniqueTypes.length > 0) {
               const iconY = discY + pad + textBlockH + 8;
               let iconX = discX + pad;
@@ -2760,11 +2890,7 @@
               ctx.font = iconLabelFont;
 
               for (const { typeName, fileName } of uniqueTypes) {
-                const img = map.style.imageManager && map.style.imageManager.images[fileName]
-                  ? null : null; // try from loaded images
-                // Draw icon from loaded map image or skip
                 try {
-                  // Try to get the image element from any img tag on page
                   const imgEls = document.querySelectorAll(`img[src="icons/${fileName}"]`);
                   if (imgEls.length > 0 && imgEls[0].complete && imgEls[0].naturalWidth > 0) {
                     ctx.drawImage(imgEls[0], iconX, iconY, iconSize, iconSize);
