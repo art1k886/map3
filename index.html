@@ -1,0 +1,2821 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Шосткинский район и регионы</title>
+  
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0; padding: 0;
+      background-color: #121212;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    
+    #map {
+      position: absolute;
+      top: 0; bottom: 0; width: 100%;
+    }
+
+    .place-label {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      text-align: center;
+      white-space: nowrap;
+      user-select: none;
+      pointer-events: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .place-label.large {
+      color: #bbbbbb;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      filter: drop-shadow(0px 1px 3px rgba(26, 26, 26, 0.95)) drop-shadow(0px 0px 6px rgba(26, 26, 26, 0.9));
+      z-index: 100;
+    }
+
+    .place-label.medium {
+      color: #bbbbbb;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      filter: drop-shadow(0px 1px 3px rgba(26, 26, 26, 0.95));
+      z-index: 50;
+    }
+
+    .place-label.small {
+      color: #bbbbbb;
+      font-size: 10px;
+      font-weight: 600;
+      opacity: 0.9;
+      filter: drop-shadow(0px 1px 2px rgba(26, 26, 26, 0.95));
+      z-index: 10;
+    }
+
+    .controls-panel {
+      position: absolute;
+      top: 10px; left: 10px;
+      z-index: 1000;
+      background: rgba(18, 18, 18, 0.92);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 280px;
+      max-height: calc(100vh - 20px);
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      transition: max-height 0.3s ease;
+    }
+
+    .controls-panel::-webkit-scrollbar { width: 4px; }
+    .controls-panel::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    @media (max-width: 600px) {
+      .controls-panel {
+        width: calc(100% - 70px);
+        max-height: 50vh;
+      }
+    }
+
+    .panel-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .panel-title {
+      color: #38bdf8;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .icons-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+    }
+
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 6px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 10px;
+      font-weight: 600;
+      touch-action: manipulation;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .icon-btn img {
+      width: 16px; height: 16px;
+      object-fit: contain;
+    }
+
+    .objects-list-wrapper {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 4px;
+      max-height: 150px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .objects-list-wrapper::-webkit-scrollbar { width: 3px; }
+    .objects-list-wrapper::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
+    .object-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 6px;
+      border-radius: 5px;
+      font-size: 10px;
+      color: #f1f5f9;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      user-select: none;
+    }
+
+    .object-item:hover { background: rgba(56, 189, 248, 0.2); }
+
+    .object-item-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+    }
+
+    .object-item-info img {
+      width: 16px; height: 16px;
+      object-fit: contain;
+    }
+
+    .object-item-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .batch-actions {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
+      border-radius: 5px;
+      padding: 6px 8px;
+      font-size: 9px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      padding: 6px 8px;
+      font-size: 9px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .empty-msg {
+      color: #64748b;
+      font-size: 10px;
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    .legend-panel {
+      position: absolute;
+      bottom: 20px;
+      left: 15px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+      pointer-events: none;
+      user-select: none;
+      max-width: 320px;
+      transition: opacity 0.2s ease;
+    }
+
+    @media (max-width: 600px) {
+      .legend-panel {
+        bottom: 10px;
+        left: 10px;
+        padding: 8px 10px;
+        max-width: 280px;
+      }
+    }
+
+    .disclaimer-text {
+      color: #1a1a1a;
+      font-size: 11.5px;
+      font-weight: 700;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+
+    .legend-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      padding-top: 4px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #0f172a;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .legend-item img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+    }
+
+    #screenshot-selection-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 5000;
+      cursor: crosshair;
+      background: rgba(5, 10, 20, 0.08);
+      user-select: none;
+      touch-action: none;
+    }
+    #screenshot-selection-rect {
+      position: fixed;
+      border: 2px solid #60a5fa;
+      background: rgba(96, 165, 250, 0.12);
+      box-shadow: 0 0 0 99999px rgba(0, 0, 0, 0.18);
+      pointer-events: none;
+      display: none;
+    }
+    #screenshot-selection-hint {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(18, 18, 18, 0.92);
+      color: #f1f5f9;
+      padding: 9px 14px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 8px;
+      font: 600 12px 'Plus Jakarta Sans', sans-serif;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .screenshot-btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .control-btn.delete {
+      background: #ef4444;
+      color: white;
+      border: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    .toast {
+      position: absolute;
+      bottom: 25px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(16, 185, 129, 0.95);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 2000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .toast.show { opacity: 1; }
+
+    .settings-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1100;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(18, 18, 18, 0.92);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+    .settings-btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      transform: scale(1.05);
+    }
+    .settings-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #e2e8f0;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.4s ease;
+    }
+    .settings-btn.active svg {
+      transform: rotate(90deg);
+      stroke: #38bdf8;
+    }
+
+    .settings-menu {
+      position: absolute;
+      top: 56px;
+      right: 10px;
+      z-index: 1099;
+      background: rgba(18, 18, 18, 0.96);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 10px 12px;
+      min-width: 270px;
+      max-height: calc(100vh - 70px);
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .settings-menu::-webkit-scrollbar { width: 4px; }
+    .settings-menu::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+    .settings-menu.open {
+      display: flex;
+    }
+
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+    }
+
+    .settings-group-title {
+      color: #38bdf8;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .settings-row-vertical {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .settings-label {
+      color: #e2e8f0;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .settings-label small {
+      display: block;
+      color: #64748b;
+      font-size: 9px;
+      font-weight: 500;
+      margin-top: 1px;
+    }
+
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle .slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.25s ease;
+    }
+    .toggle .slider::before {
+      content: "";
+      position: absolute;
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background: #e2e8f0;
+      border-radius: 50%;
+      transition: transform 0.25s ease, background 0.25s ease;
+    }
+    .toggle input:checked + .slider {
+      background: #2563eb;
+    }
+    .toggle input:checked + .slider::before {
+      transform: translateX(16px);
+      background: #ffffff;
+    }
+
+    .range-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .range-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .range-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .range-value {
+      color: #38bdf8;
+      font-size: 10px;
+      font-weight: 700;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .text-input {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 5px;
+      padding: 6px 8px;
+      color: #e2e8f0;
+      font-size: 11px;
+      font-family: inherit;
+      font-weight: 600;
+      width: 100%;
+      outline: none;
+    }
+    .text-input:focus {
+      border-color: #38bdf8;
+    }
+
+    .color-input {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 32px;
+      height: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+    }
+    .color-input::-webkit-color-swatch-wrapper { padding: 2px; }
+    .color-input::-webkit-color-swatch { border: none; border-radius: 3px; }
+
+    #watermark-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 500;
+      overflow: hidden;
+    }
+
+    .watermark-tile {
+      position: absolute;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      white-space: nowrap;
+      user-select: none;
+      pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    }
+
+    /* ===== LAYERS BUTTON ===== */
+    .layers-btn {
+      position: absolute;
+      top: 56px;
+      right: 10px;
+      z-index: 1100;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(18, 18, 18, 0.92);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+    .layers-btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      transform: scale(1.05);
+    }
+    .layers-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #e2e8f0;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.2s ease;
+    }
+    .layers-btn.active svg {
+      stroke: #38bdf8;
+    }
+
+    .layers-menu {
+      position: absolute;
+      top: 100px;
+      right: 10px;
+      z-index: 1098;
+      background: rgba(18, 18, 18, 0.96);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 6px;
+      width: 170px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .layers-menu.open {
+      display: flex;
+    }
+    .layers-menu-title {
+      color: #38bdf8;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 4px 6px 2px;
+    }
+    .layer-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .layer-option:hover {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.2);
+    }
+    .layer-option.active {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+    .layer-option-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+    .layer-option.active .layer-option-num {
+      background: #2563eb;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+    .layer-option-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .layer-option-name {
+      color: #e2e8f0;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .layer-option-desc {
+      color: #64748b;
+      font-size: 9px;
+      font-weight: 500;
+      margin-top: 1px;
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="watermark-layer"></div>
+
+<button class="settings-btn" id="settings-btn" title="Настройки">
+  <svg viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+</button>
+
+<button class="layers-btn" id="layers-btn" title="Вибрати слой">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74z"/>
+    <path d="m20 14.285 1.5.845a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74l1.5-.845"/>
+  </svg>
+</button>
+
+<div class="layers-menu" id="layers-menu">
+  <div class="layers-menu-title">Шари мапи</div>
+  <div class="layer-option" data-layer="index.html" onclick="switchLayer('index.html')">
+    <div class="layer-option-num">1</div>
+    <div class="layer-option-info">
+      <span class="layer-option-name">Основний</span>
+      <span class="layer-option-desc">Стандартний вигляд</span>
+    </div>
+  </div>
+  <div class="layer-option" data-layer="index_1.html" onclick="switchLayer('index_1.html')">
+    <div class="layer-option-num">2</div>
+    <div class="layer-option-info">
+      <span class="layer-option-name">Розширений</span>
+      <span class="layer-option-desc">Кастомні назви</span>
+    </div>
+  </div>
+  <div class="layer-option" data-layer="index_85b6b5.html" onclick="switchLayer('index_85b6b5.html')">
+    <div class="layer-option-num">3</div>
+    <div class="layer-option-info">
+      <span class="layer-option-name">Альтернативний</span>
+      <span class="layer-option-desc">Інший стиль</span>
+    </div>
+  </div>
+</div>
+
+
+<div class="settings-menu" id="settings-menu">
+  <div class="settings-group">
+    <div class="settings-group-title">Дисклеймер</div>
+    <div class="settings-row">
+      <div class="settings-label">Показать дисклеймер</div>
+      <label class="toggle">
+        <input type="checkbox" id="disclaimer-enabled" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Текст дисклеймера</div>
+      <textarea id="disclaimer-text-input" class="text-input" rows="3" style="resize: vertical; min-height: 50px;">Мапа не є військовою. Усі дані взяті з відкритих телеграм-каналів і можуть бути неточними.</textarea>
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Прозрачность</div>
+      <div class="range-control">
+        <input type="range" id="disclaimer-opacity-slider" class="range-slider" min="10" max="100" value="95">
+        <span class="range-value" id="disclaimer-opacity-value">95%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-group">
+    <div class="settings-group-title">Траектория БПЛА</div>
+    <div class="settings-row">
+      <div class="settings-label">Показывать траекторию</div>
+      <label class="toggle">
+        <input type="checkbox" id="trajectory-enabled" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="settings-row">
+      <div class="settings-label">
+        Авто-цвет линии
+        <small>Цвет подстраивается под иконку</small>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="trajectory-autocolor" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="settings-row" id="trajectory-color-row">
+      <div class="settings-label">Свой цвет линии</div>
+      <input type="color" id="trajectory-color" class="color-input" value="#38bdf8">
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Длина траектории</div>
+      <div class="range-control">
+        <input type="range" id="trajectory-length-slider" class="range-slider" min="1" max="50" value="10">
+        <span class="range-value" id="trajectory-length-value">10 км</span>
+      </div>
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Толщина линии</div>
+      <div class="range-control">
+        <input type="range" id="trajectory-width-slider" class="range-slider" min="1" max="8" value="3">
+        <span class="range-value" id="trajectory-width-value">3px</span>
+      </div>
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Прозрачность линии</div>
+      <div class="range-control">
+        <input type="range" id="trajectory-opacity-slider" class="range-slider" min="10" max="100" value="85">
+        <span class="range-value" id="trajectory-opacity-value">85%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-group">
+    <div class="settings-group-title">Карта</div>
+    <div class="settings-row">
+      <div class="settings-label">Названия Н.П. с карты</div>
+      <label class="toggle">
+        <input type="checkbox" id="toggle-map-labels">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Насыщенность карты</div>
+      <div class="range-control">
+        <input type="range" id="saturation-slider" class="range-slider" min="-100" max="100" value="-100">
+        <span class="range-value" id="saturation-value">-100%</span>
+      </div>
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Яркость городов</div>
+      <div class="range-control">
+        <input type="range" id="towns-brightness-slider" class="range-slider" min="0" max="100" value="95">
+        <span class="range-value" id="towns-brightness-value">95%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-group">
+    <div class="settings-group-title">Водяной знак</div>
+    <div class="settings-row">
+      <div class="settings-label">Показать</div>
+      <label class="toggle">
+        <input type="checkbox" id="watermark-enabled">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Текст</div>
+      <input type="text" id="watermark-text" class="text-input" value="ШОСТКА • ОГЛЯД" maxlength="40">
+    </div>
+
+    <div class="settings-row">
+      <div class="settings-label">Цвет</div>
+      <input type="color" id="watermark-color" class="color-input" value="#ffffff">
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Прозрачность</div>
+      <div class="range-control">
+        <input type="range" id="watermark-opacity-slider" class="range-slider" min="1" max="100" value="12">
+        <span class="range-value" id="watermark-opacity-value">12%</span>
+      </div>
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Размер</div>
+      <div class="range-control">
+        <input type="range" id="watermark-size-slider" class="range-slider" min="10" max="80" value="28">
+        <span class="range-value" id="watermark-size-value">28px</span>
+      </div>
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Плотность (количество)</div>
+      <div class="range-control">
+        <input type="range" id="watermark-density-slider" class="range-slider" min="1" max="30" value="8">
+        <span class="range-value" id="watermark-density-value">8</span>
+      </div>
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Угол поворота</div>
+      <div class="range-control">
+        <input type="range" id="watermark-angle-slider" class="range-slider" min="-90" max="90" value="-30">
+        <span class="range-value" id="watermark-angle-value">-30°</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="controls-panel" id="ui-panel">
+  <div class="panel-section">
+    <div class="panel-title">Новые иконки</div>
+    <div class="icons-grid">
+      <button class="icon-btn" onclick="addIconMarker('new1.png', 'Шахед')">
+        <img src="icons/new1.png" alt="Шахед"> Шахед
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('new2.png', 'Реактивний')">
+        <img src="icons/new2.png" alt="Реактивный"> Реактивный
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('banderola.png', 'Бандероль')">
+        <img src="icons/banderola.png" alt="Бандероль"> Бандероль
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('kab.png', 'КАБ')">
+        <img src="icons/kab.png" alt="КАБ"> КАБ
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('orlan.png', 'Разведчик')">
+        <img src="icons/orlan.png" alt="Разведчик"> Разведчик
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('avia.png', 'Т/А')">
+        <img src="icons/avia.png" alt="Т/А"> Т/А
+      </button>
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-title">Добавить объект</div>
+    <div class="icons-grid">
+      <button class="icon-btn" onclick="addIconMarker('зала.png', 'Зала')">
+        <img src="icons/зала.png" alt="Зала"> Зала
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('італмас.png', 'Італмас')">
+        <img src="icons/італмас.png" alt="Італмас"> Італмас
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('ланцет.png', 'Ланцет')">
+        <img src="icons/ланцет.png" alt="Ланцет"> Ланцет
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('молнія.png', 'Молнія')">
+        <img src="icons/молнія.png" alt="Молнія"> Молнія
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('невідомий.png', 'Невідомий')">
+        <img src="icons/невідомий.png" alt="Невідомий"> Невідомий
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('реактивний.png', 'Реактивний')">
+        <img src="icons/реактивний.png" alt="Реактивний"> Реактивний
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('розвіддрон.png', 'Розвіддрон')">
+        <img src="icons/розвіддрон.png" alt="Розвіддрон"> Розвіддрон
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('скам.png', 'Скам')">
+        <img src="icons/скам.png" alt="Скам"> Скам
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('фпв.png', 'ФПВ')">
+        <img src="icons/фпв.png" alt="ФПВ"> ФПВ
+      </button>
+      <button class="icon-btn" onclick="addIconMarker('шахед.png', 'Шахед')">
+        <img src="icons/шахед.png" alt="Шахед"> Шахед
+      </button>
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-title">Активные объекты (<span id="objects-count">0</span>)</div>
+    
+    <div class="batch-actions">
+      <button class="btn-secondary" onclick="selectAllObjects(true)">Выбрать все</button>
+      <button class="btn-secondary" onclick="selectAllObjects(false)">Снять выбор</button>
+      <button class="btn-danger" onclick="deleteSelectedObjects()">Удалить</button>
+    </div>
+
+    <div class="objects-list-wrapper" id="objects-list">
+      <div class="empty-msg">Нет активных объектов на карте</div>
+    </div>
+  </div>
+
+  <button class="screenshot-btn" onclick="takeScreenshot()">
+    Сделать скриншот
+  </button>
+</div>
+
+<div class="legend-panel" id="legend-panel">
+  <div class="disclaimer-text" id="disclaimer-text-view">Мапа не є військовою. Усі дані взяті з відкритих телеграм-каналів і можуть бути неточними.</div>
+  <div class="legend-items" id="legend-items-view"></div>
+</div>
+
+<div id="toast" class="toast">Скриншот района скопирован в буфер обмена!</div>
+
+<script>
+  const SHOSTKA_CENTER = [33.4729, 51.8638];
+  const TARGET_ZOOM = 9.3;
+
+  const STORAGE_KEY = 'shostka_map_settings_v5';
+
+  let activeFeatures = [];
+  let activeTrajectories = [];
+  let markerCounters = {};
+  let loadedImages = new Set();
+  let draggedFeatureId = null;
+  let hoveredDroneId = null;
+  let customPlaceMarkers = []; 
+
+  let touchActiveDroneId = null;
+  let initialTouchAngle = 0;
+  let initialDroneRotation = 0;
+
+  const ICON_AUTO_COLORS = {
+    // new1=Шахед(красный), new2=Реактивный(синий/голубой), banderola=Бандероль(оранжевый)
+    'new1.png': '#ef4444',    // красный
+    'new2.png': '#38bdf8',    // голубой
+    'banderola.png': '#f97316', // оранжевый
+    'kab.png': '#eab308',     // жёлтый
+    'orlan.png': '#94a3b8',   // серый (разведчик)
+    'avia.png': '#eab308',    // жёлтый (Т/А — тактическая авиация)
+    // украиноязычные иконки
+    'шахед.png': '#ef4444',   // красный
+    'зала.png': '#94a3b8',    // серый
+    'італмас.png': '#eab308', // жёлтый
+    'ланцет.png': '#ef4444',  // красный
+    'молнія.png': '#eab308',  // жёлтый
+    'невідомий.png': '#94a3b8', // серый
+    'реактивний.png': '#f97316', // оранжевый
+    'розвіддрон.png': '#94a3b8', // серый
+    'скам.png': '#eab308',    // жёлтый
+    'фпв.png': '#ef4444'      // красный
+  };
+
+  const disclaimerEnabled = document.getElementById('disclaimer-enabled');
+  const disclaimerTextInput = document.getElementById('disclaimer-text-input');
+  const disclaimerOpacitySlider = document.getElementById('disclaimer-opacity-slider');
+  const disclaimerOpacityValue = document.getElementById('disclaimer-opacity-value');
+  const legendPanel = document.getElementById('legend-panel');
+  const disclaimerTextView = document.getElementById('disclaimer-text-view');
+  const legendItemsView = document.getElementById('legend-items-view');
+
+  const trajectoryEnabled = document.getElementById('trajectory-enabled');
+  const trajectoryAutocolor = document.getElementById('trajectory-autocolor');
+  const trajectoryColorRow = document.getElementById('trajectory-color-row');
+  const trajectoryColor = document.getElementById('trajectory-color');
+  const trajectoryLengthSlider = document.getElementById('trajectory-length-slider');
+  const trajectoryLengthValue = document.getElementById('trajectory-length-value');
+  const trajectoryWidthSlider = document.getElementById('trajectory-width-slider');
+  const trajectoryWidthValue = document.getElementById('trajectory-width-value');
+  const trajectoryOpacitySlider = document.getElementById('trajectory-opacity-slider');
+  const trajectoryOpacityValue = document.getElementById('trajectory-opacity-value');
+
+  const toggleMapLabels = document.getElementById('toggle-map-labels');
+  const saturationSlider = document.getElementById('saturation-slider');
+  const saturationValue = document.getElementById('saturation-value');
+  const townsBrightnessSlider = document.getElementById('towns-brightness-slider');
+  const townsBrightnessValue = document.getElementById('towns-brightness-value');
+  const watermarkEnabled = document.getElementById('watermark-enabled');
+  const watermarkText = document.getElementById('watermark-text');
+  const watermarkColor = document.getElementById('watermark-color');
+  const watermarkOpacitySlider = document.getElementById('watermark-opacity-slider');
+  const watermarkOpacityValue = document.getElementById('watermark-opacity-value');
+  const watermarkSizeSlider = document.getElementById('watermark-size-slider');
+  const watermarkSizeValue = document.getElementById('watermark-size-value');
+  const watermarkDensitySlider = document.getElementById('watermark-density-slider');
+  const watermarkDensityValue = document.getElementById('watermark-density-value');
+  const watermarkAngleSlider = document.getElementById('watermark-angle-slider');
+  const watermarkAngleValue = document.getElementById('watermark-angle-value');
+
+  const defaultSettings = {
+    disclaimer: {
+      enabled: true,
+      text: 'Мапа не є військовою. Усі дані взяті з відкритих телеграм-каналів і можуть бути неточними.',
+      opacity: 95
+    },
+    trajectory: {
+      enabled: true,
+      autocolor: true,
+      color: '#38bdf8',
+      length: 10,
+      width: 3,
+      opacity: 85
+    },
+    mapLabels: false,
+    saturation: -100,
+    townsBrightness: 95,
+    watermark: {
+      enabled: false,
+      text: 'ШОСТКА • ОГЛЯД',
+      color: '#ffffff',
+      opacity: 12,
+      size: 28,
+      density: 8,
+      angle: -30
+    }
+  };
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return JSON.parse(JSON.stringify(defaultSettings));
+      const parsed = JSON.parse(raw);
+      return {
+        ...defaultSettings,
+        ...parsed,
+        disclaimer: { ...defaultSettings.disclaimer, ...(parsed.disclaimer || {}) },
+        trajectory: { ...defaultSettings.trajectory, ...(parsed.trajectory || {}) },
+        watermark: { ...defaultSettings.watermark, ...(parsed.watermark || {}) }
+      };
+    } catch (e) {
+      return JSON.parse(JSON.stringify(defaultSettings));
+    }
+  }
+
+  function saveSettings() {
+    try {
+      const settings = {
+        disclaimer: {
+          enabled: disclaimerEnabled.checked,
+          text: disclaimerTextInput.value,
+          opacity: parseInt(disclaimerOpacitySlider.value, 10)
+        },
+        trajectory: {
+          enabled: trajectoryEnabled.checked,
+          autocolor: trajectoryAutocolor.checked,
+          color: trajectoryColor.value,
+          length: parseInt(trajectoryLengthSlider.value, 10),
+          width: parseInt(trajectoryWidthSlider.value, 10),
+          opacity: parseInt(trajectoryOpacitySlider.value, 10)
+        },
+        mapLabels: toggleMapLabels.checked,
+        saturation: parseInt(saturationSlider.value, 10),
+        townsBrightness: parseInt(townsBrightnessSlider.value, 10),
+        watermark: {
+          enabled: watermarkEnabled.checked,
+          text: watermarkText.value,
+          color: watermarkColor.value,
+          opacity: parseInt(watermarkOpacitySlider.value, 10),
+          size: parseInt(watermarkSizeSlider.value, 10),
+          density: parseInt(watermarkDensitySlider.value, 10),
+          angle: parseInt(watermarkAngleSlider.value, 10)
+        }
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    } catch (e) {}
+  }
+
+  const savedSettings = loadSettings();
+
+  const places = [
+    { name: "Суми", coords: [34.79906498, 50.91740593], size: "large" },
+    { name: "Шостка", coords: [33.4729, 51.8638], size: "large" },
+    { name: "Глухів", coords: [33.9148, 51.6787], size: "large" },
+    { name: "Кролевець", coords: [33.3833, 51.5474], size: "large" },
+    { name: "Конотоп", coords: [33.20040213, 51.23250772], size: "large" },
+    { name: "Охтирка", coords: [34.89467602, 50.30852254], size: "large" },
+    { name: "Ромни", coords: [33.49520264, 50.74025149], size: "large" },
+    { name: "Путивль", coords: [33.86884747, 51.33529242], size: "large" },
+    { name: "Тростянець", coords: [34.965668, 50.484778], size: "large" },
+    { name: "Лебедин", coords: [34.48258115, 50.58227558], size: "medium" },
+    { name: "Буринь", coords: [33.83337859, 51.19935882], size: "medium" },
+    { name: "Білопілля", coords: [34.31078602, 51.14747465], size: "medium" },
+    { name: "Краснопілля", coords: [35.256328, 50.773886], size: "medium" },
+    { name: "Велика Писарівка", coords: [35.482992, 50.423354], size: "medium" },
+    { name: "Ворожба", coords: [34.226649, 51.173162], size: "medium" },
+    { name: "Ямпіль", coords: [33.7802, 51.9453], size: "medium" },
+    { name: "Середина-Буда", coords: [34.0288, 52.1849], size: "medium" },
+    { name: "Чернігів", coords: [31.28655978, 51.50541414], size: "large" },
+    { name: "Ніжин", coords: [31.88843512, 51.04772279], size: "large" },
+    { name: "Прилуки", coords: [32.3923, 50.5843], size: "large" },
+    { name: "Новгород-Сіверський", coords: [33.2796, 52.0040], size: "large" },
+    { name: "Бахмач", coords: [32.783333, 51.183333], size: "large" },
+    { name: "Корюківка", coords: [32.2709, 51.7766], size: "medium" },
+    { name: "Городня", coords: [31.5973, 51.8841], size: "medium" },
+    { name: "Сновськ", coords: [31.9575, 51.8499], size: "medium" },
+    { name: "Борзна", coords: [32.4411, 51.2527], size: "medium" },
+    { name: "Мена", coords: [32.216667, 51.516667], size: "medium" },
+    { name: "Короп", coords: [32.95575, 51.56265], size: "medium" },
+    { name: "Ічня", coords: [32.394, 50.862], size: "medium" },
+    { name: "Носівка", coords: [31.581, 50.931], size: "medium" },
+    { name: "Остер", coords: [30.883, 50.95], size: "medium" },
+    { name: "Козелець", coords: [31.116667, 50.9], size: "medium" },
+    { name: "Сосниця", coords: [32.499722, 51.531111], size: "medium" },
+    { name: "Варва", coords: [32.723611, 50.495], size: "medium" },
+    { name: "Ріпки", coords: [31.083333, 51.8], size: "medium" },
+    { name: "Бобровиця", coords: [31.382047, 50.745594], size: "medium" },
+    { name: "Київ", coords: [30.5234, 50.4501], size: "large" },
+    { name: "Біла Церква", coords: [30.1167, 49.7989], size: "medium" },
+    { name: "Бориспіль", coords: [30.9531, 50.3528], size: "medium" },
+    { name: "Бровари", coords: [30.7908, 50.5114], size: "medium" },
+    { name: "Буча", coords: [30.2131, 50.5486], size: "medium" },
+    { name: "Вишгород", coords: [30.4853, 50.5847], size: "medium" },
+    { name: "Обухів", coords: [30.6225, 50.1147], size: "medium" },
+    { name: "Фастів", coords: [29.9181, 50.0781], size: "medium" },
+    { name: "Вінниця", coords: [28.4682, 49.2331], size: "large" },
+    { name: "Жмеринка", coords: [28.1061, 49.0378], size: "medium" },
+    { name: "Могилів-Подільський", coords: [27.7983, 48.4528], size: "medium" },
+    { name: "Гайсин", coords: [29.3878, 48.8106], size: "medium" },
+    { name: "Тульчин", coords: [28.8542, 48.6750], size: "medium" },
+    { name: "Хмільник", coords: [27.9572, 49.5569], size: "medium" },
+    { name: "Луцьк", coords: [25.3254, 50.7472], size: "large" },
+    { name: "Ковель", coords: [24.7089, 51.2169], size: "medium" },
+    { name: "Володимир", coords: [24.3222, 50.8481], size: "medium" },
+    { name: "Камінь-Каширський", coords: [24.9608, 51.6258], size: "medium" },
+    { name: "Дніпро", coords: [35.0462, 48.4647], size: "large" },
+    { name: "Кривий Ріг", coords: [33.3918, 47.9105], size: "medium" },
+    { name: "Кам'янське", coords: [34.6022, 48.5142], size: "medium" },
+    { name: "Нікополь", coords: [34.3975, 47.5681], size: "medium" },
+    { name: "Павлоград", coords: [35.8425, 48.5283], size: "medium" },
+    { name: "Новомосковськ", coords: [35.2636, 48.6417], size: "medium" },
+    { name: "Синельникове", coords: [35.5222, 48.3517], size: "medium" },
+    { name: "Донецьк", coords: [37.8028, 48.0159], size: "large" },
+    { name: "Краматорськ", coords: [37.5844, 48.7392], size: "medium" },
+    { name: "Маріуполь", coords: [37.5494, 47.0978], size: "medium" },
+    { name: "Покровськ", coords: [37.1828, 48.2828], size: "medium" },
+    { name: "Бахмут", coords: [38.0025, 48.5986], size: "medium" },
+    { name: "Волноваха", coords: [37.4839, 47.5847], size: "medium" },
+    { name: "Горлівка", coords: [38.0025, 48.3061], size: "medium" },
+    { name: "Кальміуське", coords: [38.0833, 47.6667], size: "medium" },
+    { name: "Житомир", coords: [28.6587, 50.2546], size: "large" },
+    { name: "Бердичів", coords: [28.5831, 49.8919], size: "medium" },
+    { name: "Коростень", coords: [28.6486, 50.9497], size: "medium" },
+    { name: "Звягель", coords: [27.6378, 50.5833], size: "medium" },
+    { name: "Ужгород", coords: [22.2879, 48.6208], size: "large" },
+    { name: "Мукачево", coords: [22.7183, 48.4414], size: "medium" },
+    { name: "Берегове", coords: [22.6439, 48.2078], size: "medium" },
+    { name: "Хуст", coords: [23.2981, 48.1747], size: "medium" },
+    { name: "Рахів", coords: [24.2081, 48.0539], size: "medium" },
+    { name: "Тячів", coords: [23.5722, 48.0158], size: "medium" },
+    { name: "Запоріжжя", coords: [35.1396, 47.8388], size: "large" },
+    { name: "Мелітополь", coords: [35.3686, 46.8489], size: "medium" },
+    { name: "Бердянськ", coords: [36.7872, 46.7556], size: "medium" },
+    { name: "Василівка", coords: [35.2142, 47.4361], size: "medium" },
+    { name: "Пологи", coords: [36.2625, 47.4764], size: "medium" },
+    { name: "Івано-Франківськ", coords: [24.7111, 48.9226], size: "large" },
+    { name: "Калуш", coords: [24.3606, 49.0442], size: "medium" },
+    { name: "Коломия", coords: [25.0403, 48.5314], size: "medium" },
+    { name: "Надвірна", coords: [24.5714, 48.6325], size: "medium" },
+    { name: "Косів", coords: [25.0931, 48.3183], size: "medium" },
+    { name: "Верховина", coords: [24.8114, 48.1550], size: "medium" },
+    { name: "Кропивницький", coords: [32.2623, 48.5079], size: "large" },
+    { name: "Олександрія", coords: [33.1167, 48.6667], size: "medium" },
+    { name: "Голованівськ", coords: [30.4503, 48.3842], size: "medium" },
+    { name: "Новоукраїнка", coords: [31.5283, 48.3156], size: "medium" },
+    { name: "Луганськ", coords: [39.3078, 48.5740], size: "large" },
+    { name: "Сєвєродонецьк", coords: [38.4908, 48.9481], size: "medium" },
+    { name: "Старобільськ", coords: [38.9056, 49.2781], size: "medium" },
+    { name: "Сватове", coords: [38.1556, 49.4086], size: "medium" },
+    { name: "Алчевськ", coords: [38.8028, 48.4781], size: "medium" },
+    { name: "Довжанськ", coords: [39.6508, 48.0778], size: "medium" },
+    { name: "Щастя", coords: [39.2319, 48.7381], size: "medium" },
+    { name: "Львів", coords: [24.0311, 49.8397], size: "large" },
+    { name: "Дрогобич", coords: [23.5061, 49.3514], size: "medium" },
+    { name: "Стрий", coords: [23.8525, 49.2569], size: "medium" },
+    { name: "Самбір", coords: [23.1975, 49.5183], size: "medium" },
+    { name: "Червоноград", coords: [24.2306, 50.3867], size: "medium" },
+    { name: "Золочів", coords: [24.8931, 49.8067], size: "medium" },
+    { name: "Яворів", coords: [23.3931, 49.9328], size: "medium" },
+    { name: "Миколаїв", coords: [31.9946, 46.9750], size: "large" },
+    { name: "Вознесенськ", coords: [31.3131, 47.5614], size: "medium" },
+    { name: "Первомайськ", coords: [30.8525, 48.0469], size: "medium" },
+    { name: "Баштанка", coords: [32.4419, 47.4042], size: "medium" },
+    { name: "Одеса", coords: [30.7233, 46.4825], size: "large" },
+    { name: "Ізмаїл", coords: [28.8358, 45.3528], size: "medium" },
+    { name: "Білгород-Дністровський", coords: [30.3475, 46.1925], size: "medium" },
+    { name: "Подільськ", coords: [29.5358, 47.7419], size: "medium" },
+    { name: "Болград", coords: [28.6119, 45.6817], size: "medium" },
+    { name: "Березівка", coords: [30.9103, 47.2008], size: "medium" },
+    { name: "Роздільна", coords: [30.0739, 46.8522], size: "medium" },
+    { name: "Полтава", coords: [34.5514, 49.5883], size: "large" },
+    { name: "Кременчук", coords: [33.4167, 49.0667], size: "medium" },
+    { name: "Миргород", coords: [33.6083, 49.9661], size: "medium" },
+    { name: "Лубни", coords: [33.0039, 50.0125], size: "medium" },
+    { name: "Рівне", coords: [26.2516, 50.6199], size: "large" },
+    { name: "Вараш", coords: [25.8569, 51.3439], size: "medium" },
+    { name: "Дубно", coords: [25.7381, 50.4189], size: "medium" },
+    { name: "Сарни", coords: [26.6083, 51.3328], size: "medium" },
+    { name: "Тернопіль", coords: [25.5948, 49.5535], size: "large" },
+    { name: "Чортків", coords: [25.7958, 49.0169], size: "medium" },
+    { name: "Кременець", coords: [25.7267, 50.1008], size: "medium" },
+    { name: "Харків", coords: [36.2304, 49.9935], size: "large" },
+    { name: "Ізюм", coords: [37.2589, 49.1914], size: "medium" },
+    { name: "Лозова", coords: [36.3150, 48.8892], size: "medium" },
+    { name: "Куп'янськ", coords: [37.6167, 49.7167], size: "medium" },
+    { name: "Чугуїв", coords: [36.6869, 49.8358], size: "medium" },
+    { name: "Богодухів", coords: [35.5319, 50.1583], size: "medium" },
+    { name: "Красноград", coords: [35.4528, 49.3731], size: "medium" },
+    { name: "Херсон", coords: [32.6169, 46.6354], size: "large" },
+    { name: "Берислав", coords: [33.4267, 46.8389], size: "medium" },
+    { name: "Генічеськ", coords: [34.8039, 46.1758], size: "medium" },
+    { name: "Каховка", coords: [33.4869, 46.8122], size: "medium" },
+    { name: "Скадовськ", coords: [32.9097, 46.1189], size: "medium" },
+    { name: "Хмельницький", coords: [26.9871, 49.4230], size: "large" },
+    { name: "Кам'янець-Подільський", coords: [26.5833, 48.6833], size: "medium" },
+    { name: "Шепетівка", coords: [27.0628, 50.1814], size: "medium" },
+    { name: "Черкаси", coords: [32.0621, 49.4444], size: "large" },
+    { name: "Умань", coords: [30.2217, 48.7483], size: "medium" },
+    { name: "Золотоноша", coords: [32.0431, 49.6672], size: "medium" },
+    { name: "Звенигородка", coords: [30.9678, 49.0717], size: "medium" },
+    { name: "Чернівці", coords: [25.9358, 48.2921], size: "large" },
+    { name: "Вижниця", coords: [25.1825, 48.2439], size: "medium" },
+    { name: "Дністровськ", coords: [26.8394, 48.5133], size: "medium" },
+    { name: "Сімферополь", coords: [34.1025, 44.9521], size: "large" },
+    { name: "Севастополь", coords: [33.5224, 44.6166], size: "large" },
+    { name: "Бахчисарай", coords: [33.8581, 44.7533], size: "medium" },
+    { name: "Білогірськ", coords: [34.6019, 45.0569], size: "medium" },
+    { name: "Джанкой", coords: [34.3933, 45.7086], size: "medium" },
+    { name: "Євпаторія", coords: [33.3667, 45.1903], size: "medium" },
+    { name: "Керч", coords: [36.4711, 45.3562], size: "medium" },
+    { name: "Курман", coords: [34.3167, 45.4925], size: "medium" },
+    { name: "Перекоп", coords: [33.6931, 45.9531], size: "medium" },
+    { name: "Феодосія", coords: [35.3792, 45.0317], size: "medium" },
+    { name: "Ялта", coords: [34.1667, 44.4994], size: "medium" },
+    { name: "Есмань", coords: [34.0659, 51.7673], size: "medium" },
+    { name: "Шалигине", coords: [34.1002, 51.5739], size: "medium" },
+    { name: "Вороніж", coords: [33.4781, 51.7755], size: "medium" },
+
+    { name: "Уралове", coords: [33.5571, 52.1872], size: "small" },
+    { name: "Очкине", coords: [33.3713, 52.2261], size: "small" },
+    { name: "Слоут", coords: [33.7970, 51.7596], size: "small" },
+    { name: "Богданівка", coords: [33.3325, 51.8954], size: "small" },
+    { name: "Собич", coords: [33.2587, 51.8602], size: "small" },
+    { name: "Пирогівка", coords: [33.2824, 51.9148], size: "small" },
+    { name: "Тиманівка", coords: [33.1276, 51.7709], size: "small" },
+    { name: "Клишки", coords: [33.3030, 51.7641], size: "small" },
+    { name: "Степне", coords: [33.752664, 52.084731], size: "small" },
+    { name: "Хутір-Михайлівський", coords: [33.899980, 52.045093], size: "medium" },
+    { name: "Миронівка", coords: [33.555312, 51.904937], size: "small" },
+    { name: "Береза", coords: [33.859720, 51.734766], size: "small" },
+    { name: "Івот", coords: [33.486329, 51.983202], size: "small" },
+    { name: "Каліївка", coords: [33.533156, 52.059774], size: "small" },
+    { name: "Шатрище", coords: [33.684786, 52.026218], size: "small" }
+  ];
+
+  const map = new maplibregl.Map({
+    container: 'map',
+    preserveDrawingBuffer: true,
+    style: {
+      version: 8,
+      glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+      sources: {
+        'google-satellite': {
+          type: 'raster',
+          tiles: ['https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'],
+          tileSize: 256
+        },
+        'esri-satellite': {
+          type: 'raster',
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256
+        },
+        'openmaptiles': {
+          type: 'vector',
+          url: 'https://tiles.openfreemap.org/planet'
+        }
+      },
+      layers: [
+        {
+          id: 'google-satellite-layer',
+          type: 'raster',
+          source: 'google-satellite',
+          paint: {
+            'raster-saturation': -1.0,
+            'raster-brightness-max': 0.52,
+            'raster-contrast': 0.05
+          }
+        },
+        {
+          id: 'esri-satellite-layer',
+          type: 'raster',
+          source: 'esri-satellite',
+          paint: {
+            'raster-saturation': -1.0,
+            'raster-brightness-max': 0.52,
+            'raster-contrast': 0.05
+          }
+        }
+      ]
+    },
+    center: SHOSTKA_CENTER,
+    zoom: TARGET_ZOOM
+  });
+
+  const watermarkLayer = document.getElementById('watermark-layer');
+
+  function renderDisclaimerPanel(featuresInBox = null) {
+    const enabled = disclaimerEnabled.checked;
+    if (!enabled) {
+      legendPanel.style.display = 'none';
+      return;
+    }
+    legendPanel.style.display = 'flex';
+    legendPanel.style.opacity = (parseInt(disclaimerOpacitySlider.value, 10) / 100).toString();
+    disclaimerTextView.textContent = disclaimerTextInput.value;
+
+    const sourceList = featuresInBox !== null ? featuresInBox : activeFeatures;
+
+    const uniqueTypes = new Map();
+    sourceList.forEach(f => {
+      const typeName = f.properties.typeName || f.properties.title.replace(/\s+\d+$/, '');
+      const fileName = f.properties.fileName;
+      if (!uniqueTypes.has(typeName)) {
+        uniqueTypes.set(typeName, fileName);
+      }
+    });
+
+    legendItemsView.innerHTML = '';
+    if (uniqueTypes.size === 0) {
+      legendItemsView.style.display = 'none';
+    } else {
+      legendItemsView.style.display = 'flex';
+      uniqueTypes.forEach((fileName, typeName) => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `
+          <img src="icons/${fileName}" alt="${typeName}">
+          <span>${typeName}</span>
+        `;
+        legendItemsView.appendChild(item);
+      });
+    }
+  }
+
+  function setMapSaturation(val) {
+    const normalizedSat = parseFloat(val) / 100;
+    saturationValue.textContent = `${val > 0 ? '+' : ''}${val}%`;
+    
+    if (map.getLayer('google-satellite-layer')) {
+      map.setPaintProperty('google-satellite-layer', 'raster-saturation', normalizedSat);
+    }
+    if (map.getLayer('esri-satellite-layer')) {
+      map.setPaintProperty('esri-satellite-layer', 'raster-saturation', normalizedSat);
+    }
+  }
+
+  function setTownsBrightness(val) {
+    const opacity = parseFloat(val) / 100;
+    townsBrightnessValue.textContent = `${val}%`;
+    
+    if (map.getLayer('towns-fill')) {
+      map.setPaintProperty('towns-fill', 'fill-opacity', opacity);
+    }
+    if (map.getLayer('towns-outline')) {
+      map.setPaintProperty('towns-outline', 'line-opacity', Math.min(1, opacity + 0.05));
+    }
+  }
+
+  function updateTrajectoryStyle() {
+    trajectoryColorRow.style.display = trajectoryAutocolor.checked ? 'none' : 'flex';
+    if (typeof window.drawTrajectoryCanvas === 'function') drawTrajectoryCanvas();
+  }
+
+  function syncTrajectoryUI() {
+    trajectoryLengthValue.textContent = trajectoryLengthSlider.value + ' км';
+    trajectoryWidthValue.textContent = trajectoryWidthSlider.value + 'px';
+    trajectoryOpacityValue.textContent = trajectoryOpacitySlider.value + '%';
+  }
+
+  function renderWatermark() {
+    watermarkLayer.innerHTML = '';
+    
+    const enabled = watermarkEnabled.checked;
+    if (!enabled) {
+      watermarkLayer.style.display = 'none';
+      return;
+    }
+    watermarkLayer.style.display = 'block';
+
+    const text = watermarkText.value.trim() || 'ШОСТКА • ОГЛЯД';
+    const color = watermarkColor.value;
+    const opacity = parseInt(watermarkOpacitySlider.value, 10) / 100;
+    const fontSize = parseInt(watermarkSizeSlider.value, 10);
+    const density = parseInt(watermarkDensitySlider.value, 10);
+    const angle = parseInt(watermarkAngleSlider.value, 10);
+
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+    
+    const cols = Math.max(1, Math.round(Math.sqrt(density * screenW / screenH)));
+    const rows = Math.max(1, Math.round(density / cols));
+    
+    const cellW = screenW / cols;
+    const cellH = screenH / rows;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const tile = document.createElement('div');
+        tile.className = 'watermark-tile';
+        tile.textContent = text;
+        tile.style.color = color;
+        tile.style.opacity = opacity;
+        tile.style.fontSize = fontSize + 'px';
+        tile.style.left = (c * cellW + cellW / 2) + 'px';
+        tile.style.top = (r * cellH + cellH / 2) + 'px';
+        tile.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+        watermarkLayer.appendChild(tile);
+      }
+    }
+  }
+
+  function syncWatermarkUI() {
+    watermarkOpacityValue.textContent = watermarkOpacitySlider.value + '%';
+    watermarkSizeValue.textContent = watermarkSizeSlider.value + 'px';
+    watermarkDensityValue.textContent = watermarkDensitySlider.value;
+    watermarkAngleValue.textContent = watermarkAngleSlider.value + '°';
+  }
+
+  function applySettings(s) {
+    disclaimerEnabled.checked = s.disclaimer.enabled;
+    disclaimerTextInput.value = s.disclaimer.text;
+    disclaimerOpacitySlider.value = s.disclaimer.opacity;
+    disclaimerOpacityValue.textContent = s.disclaimer.opacity + '%';
+    renderDisclaimerPanel();
+
+    trajectoryEnabled.checked = s.trajectory.enabled;
+    trajectoryAutocolor.checked = s.trajectory.autocolor !== false;
+    trajectoryColor.value = s.trajectory.color;
+    trajectoryLengthSlider.value = s.trajectory.length;
+    trajectoryWidthSlider.value = s.trajectory.width;
+    trajectoryOpacitySlider.value = s.trajectory.opacity;
+    syncTrajectoryUI();
+
+    toggleMapLabels.checked = s.mapLabels;
+    
+    saturationSlider.value = s.saturation;
+    setMapSaturation(s.saturation);
+
+    townsBrightnessSlider.value = s.townsBrightness;
+    setTownsBrightness(s.townsBrightness);
+
+    watermarkEnabled.checked = s.watermark.enabled;
+    watermarkText.value = s.watermark.text;
+    watermarkColor.value = s.watermark.color;
+    watermarkOpacitySlider.value = s.watermark.opacity;
+    watermarkSizeSlider.value = s.watermark.size;
+    watermarkDensitySlider.value = s.watermark.density;
+    watermarkAngleSlider.value = s.watermark.angle;
+    
+    syncWatermarkUI();
+    renderWatermark();
+
+    if (s.mapLabels) {
+      customPlaceMarkers.forEach(m => m.remove());
+      if (map.getLayer('place-labels')) {
+        map.setLayoutProperty('place-labels', 'visibility', 'visible');
+      }
+    } else {
+      customPlaceMarkers.forEach(m => {
+        m.addTo(map);
+      });
+      if (map.getLayer('place-labels')) {
+        map.setLayoutProperty('place-labels', 'visibility', 'none');
+      }
+    }
+  }
+
+  map.on('load', async () => {
+    let ukraineGeojson = null;
+    let ukraineRings = [];
+
+    try {
+      const res = await fetch('ukraine.geojson');
+      ukraineGeojson = await res.json();
+      
+      const feature = ukraineGeojson.type === 'FeatureCollection' ? ukraineGeojson.features[0] : ukraineGeojson;
+      
+      if (feature.geometry.type === 'Polygon') {
+        ukraineRings = feature.geometry.coordinates;
+      } else if (feature.geometry.type === 'MultiPolygon') {
+        feature.geometry.coordinates.forEach(poly => {
+          ukraineRings.push(poly[0]);
+        });
+      }
+    } catch(e) {}
+
+    if (ukraineRings.length > 0) {
+      const worldBox = [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]];
+      const outsideMaskGeoJSON = {
+        "type": "Feature",
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [worldBox, ...ukraineRings]
+        }
+      };
+
+      map.addSource('outside-mask-src', { type: 'geojson', data: outsideMaskGeoJSON });
+      map.addLayer({
+        'id': 'outside-mask-dimming',
+        'type': 'fill',
+        'source': 'outside-mask-src',
+        'paint': {
+          'fill-color': '#1a1a1a',
+          'fill-opacity': 0.70
+        }
+      });
+    }
+
+    map.addSource('ukraine-src', { type: 'geojson', data: ukraineGeojson || 'ukraine.geojson' });
+    map.addSource('towns-src', { type: 'geojson', data: 'towns.geojson' });
+    map.addSource('traca-src', { type: 'geojson', data: 'traca.geojson' });
+    map.addSource('rayony-src', { type: 'geojson', data: 'rayony_ukrainy.geojson' });
+    map.addSource('regions-src', { type: 'geojson', data: 'regions.geojson' });
+    map.addSource('obl-src', { type: 'geojson', data: 'obl.geojson' });
+
+    map.addLayer({
+      'id': 'ukraine-tint',
+      'type': 'fill',
+      'source': 'ukraine-src',
+      'paint': {
+        'fill-color': '#ffffff',
+        'fill-opacity': 0.05
+      }
+    });
+
+    map.addLayer({
+      'id': 'towns-fill',
+      'type': 'fill',
+      'source': 'towns-src',
+      'paint': {
+        'fill-color': '#dddddd',
+        'fill-opacity': 0.95
+      }
+    });
+
+    map.addLayer({
+      'id': 'towns-outline',
+      'type': 'line',
+      'source': 'towns-src',
+      'paint': {
+        'line-color': '#dddddd',
+        'line-width': 1.0,
+        'line-opacity': 0.9
+      }
+    });
+
+    map.addLayer({
+      'id': 'traca-layer',
+      'type': 'line',
+      'source': 'traca-src',
+      'paint': {
+        'line-color': '#b8731d',
+        'line-width': 1.6,
+        'line-opacity': 0.85
+      }
+    });
+
+    map.addLayer({
+      'id': 'ukraine-border',
+      'type': 'line',
+      'source': 'ukraine-src',
+      'paint': {
+        'line-color': '#787878',
+        'line-width': 2.5,
+        'line-opacity': 1.0
+      }
+    });
+
+    map.addLayer({
+      'id': 'regions-border',
+      'type': 'line',
+      'source': 'regions-src',
+      'paint': {
+        'line-color': '#787878',
+        'line-width': 1.5,
+        'line-opacity': 0.8
+      }
+    });
+    
+    map.addLayer({
+      'id': 'obl-border',
+      'type': 'line',
+      'source': 'obl-src',
+      'paint': {
+        'line-color': '#444444',     
+        'line-width': 1.8,         
+        'line-opacity': 0.95      
+      }
+    });
+
+    map.addLayer({
+      'id': 'all-districts-border',
+      'type': 'line',
+      'source': 'rayony-src',
+      'paint': {
+        'line-color': '#787878',
+        'line-width': 0.6,
+        'line-opacity': 0.6
+      }
+    });
+
+    map.addLayer({
+      id: 'place-labels',
+      type: 'symbol',
+      source: 'openmaptiles',
+      'source-layer': 'place',
+      filter: [
+        'all',
+        ['==', ['geometry-type'], 'Point'],
+        ['in', ['get', 'class'], ['literal', ['city', 'town', 'village', 'hamlet']]],
+        ['has', 'name:uk']
+      ],
+      layout: {
+        'text-field': ['get', 'name:uk'],
+        'text-font': ['Noto Sans Regular'],
+        'text-size': [
+          'interpolate', ['linear'], ['zoom'],
+          4, 9,
+          6, 10,
+          8, 11,
+          10, 12,
+          12, 13
+        ],
+        'text-anchor': 'center',
+        'text-allow-overlap': false,
+        'text-ignore-placement': false,
+        'text-padding': 2,
+        'text-max-width': 8
+      },
+      paint: {
+        'text-color': '#bbbbbb',
+        'text-halo-width': 0
+      },
+      minzoom: 5,
+      maxzoom: 14
+    });
+
+    map.setLayoutProperty('place-labels', 'visibility', 'none');
+
+    function hexToRgb(hex) {
+      const h = (hex || '#38bdf8').replace('#','');
+      const full = h.length === 3 ? h.split('').map(c=>c+c).join('') : h;
+      const r = parseInt(full.slice(0,2),16);
+      const g = parseInt(full.slice(2,4),16);
+      const b = parseInt(full.slice(4,6),16);
+      return `${r},${g},${b}`;
+    }
+
+    // Custom MapLibre layer drawn BEFORE drones-layer → trajectories appear UNDER icons
+    // Also captured automatically in map.getCanvas() for screenshots
+    const trajectoryCustomLayer = {
+      id: 'trajectory-custom-layer',
+      type: 'custom',
+      render(gl, matrix) {
+        if (!trajectoryEnabled.checked) return;
+        if (activeTrajectories.length === 0) return;
+
+        // Use 2D canvas overlay on top of the WebGL canvas for gradient lines
+        // We request a repaint every frame via triggerRepaint
+      }
+    };
+
+    // Separate 2D canvas overlaid on the map for gradient lines
+    // Placed BEFORE map GL canvas in DOM so it's under icons visually
+    const trajCanvas = document.createElement('canvas');
+    trajCanvas.id = 'traj-canvas';
+    trajCanvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;';
+    // Insert BEFORE the GL canvas in the container so it renders under it
+    // But we need it ON TOP of tiles and UNDER icons -- since icons are in GL canvas we
+    // must draw trajectories INSIDE the GL canvas using a custom layer added before drones-layer.
+    // So: use a second 2D canvas that mirrors GL canvas dimensions, composited via CSS.
+    // Icons are in GL canvas; 2D canvas is between the tile layer and GL canvas via z-index trick.
+    // Actually: put 2D canvas OVER GL canvas (z-index higher) but draw icons there too? No.
+    // Best solution: use map's 2D overlay API -- draw on same canvas BETWEEN layers using custom layer.
+    const mapContainer = map.getCanvasContainer();
+    mapContainer.style.position = 'relative';
+    mapContainer.appendChild(trajCanvas);
+
+    function resizeTrajCanvas() {
+      const c = map.getCanvas();
+      trajCanvas.width = c.width;
+      trajCanvas.height = c.height;
+      trajCanvas.style.width = c.style.width;
+      trajCanvas.style.height = c.style.height;
+      // z-index: must be between tiles (in GL) and icons (in GL).
+      // Since both are in GL canvas, we can't split them. Instead we put traj canvas
+      // OVER GL canvas so icons render on top visually (GL canvas is already composited last).
+      // Set trajCanvas z-index BELOW the GL canvas:
+      trajCanvas.style.zIndex = '0';
+      c.style.zIndex = '1';
+      c.style.position = 'relative';
+    }
+    resizeTrajCanvas();
+    map.on('resize', resizeTrajCanvas);
+
+    window.drawTrajectoryCanvas = function() {
+      const ctx = trajCanvas.getContext('2d');
+      ctx.clearRect(0, 0, trajCanvas.width, trajCanvas.height);
+      if (!trajectoryEnabled.checked) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const lineW = parseInt(trajectoryWidthSlider.value, 10) * dpr;
+      const opacity = parseInt(trajectoryOpacitySlider.value, 10) / 100;
+      const isAutocolor = trajectoryAutocolor.checked;
+      const fallbackColor = trajectoryColor.value;
+
+      activeFeatures.forEach(feat => {
+        const traj = activeTrajectories.find(t => t.properties.parentId === feat.properties.id);
+        if (!traj || !traj.geometry.coordinates[1]) return;
+
+        const [startLng, startLat] = traj.geometry.coordinates[0];
+        const [endLng, endLat] = traj.geometry.coordinates[1];
+
+        const startPx = map.project([startLng, startLat]);
+        const endPx = map.project([endLng, endLat]);
+
+        const rawColor = isAutocolor
+          ? (ICON_AUTO_COLORS[feat.properties.fileName] || '#38bdf8')
+          : fallbackColor;
+        const rgb = hexToRgb(rawColor);
+
+        const x0 = startPx.x * dpr, y0 = startPx.y * dpr;
+        const x1 = endPx.x * dpr,   y1 = endPx.y * dpr;
+
+        // Gradient from opaque at drone position to transparent at tail
+        const grad = ctx.createLinearGradient(x0, y0, x1, y1);
+        grad.addColorStop(0,   `rgba(${rgb},${opacity})`);
+        grad.addColorStop(0.5, `rgba(${rgb},${opacity * 0.4})`);
+        grad.addColorStop(1,   `rgba(${rgb},0)`);
+
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = lineW;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      });
+    };
+
+    map.on('render', () => { window.drawTrajectoryCanvas(); });
+
+    map.addSource('drones-src', {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: []
+      }
+    });
+
+    map.addLayer({
+      id: 'drones-layer',
+      type: 'symbol',
+      source: 'drones-src',
+      layout: {
+        'icon-image': ['get', 'iconImage'],
+        'icon-size': 0.07,
+        'icon-rotate': ['get', 'rotation'],
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+        'icon-pitch-alignment': 'map',
+        'icon-rotation-alignment': 'map'
+      }
+    });
+
+    places.forEach(place => {
+      const el = document.createElement('div');
+      el.className = `place-label ${place.size}`;
+      el.innerText = place.name;
+      const marker = new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat(place.coords).addTo(map);
+      customPlaceMarkers.push(marker);
+    });
+
+    map.on('mousedown', 'drones-layer', (e) => {
+      if (!e.features.length) return;
+      draggedFeatureId = e.features[0].properties.id;
+      map.getCanvas().style.cursor = 'grabbing';
+      map.dragPan.disable();
+    });
+
+    map.on('mousemove', (e) => {
+      if (draggedFeatureId) {
+        const feat = activeFeatures.find(f => f.properties.id === draggedFeatureId);
+        if (feat) {
+          feat.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat];
+          requestUpdateGeoJSON();
+        }
+      }
+    });
+
+    map.on('mouseup', () => {
+      if (draggedFeatureId) {
+        draggedFeatureId = null;
+        map.getCanvas().style.cursor = '';
+        map.dragPan.enable();
+      }
+    });
+
+    map.on('mouseenter', 'drones-layer', (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+      if (e.features.length > 0) {
+        hoveredDroneId = e.features[0].properties.id;
+      }
+    });
+
+    map.on('mouseleave', 'drones-layer', () => {
+      if (!draggedFeatureId) map.getCanvas().style.cursor = '';
+      hoveredDroneId = null;
+    });
+
+    const canvas = map.getCanvas();
+
+    function getTouchAngle(t1, t2) {
+      return Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
+    }
+
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const point = [touch.clientX, touch.clientY];
+        const bbox = [[point[0] - 20, point[1] - 20], [point[0] + 20, point[1] + 20]];
+        const features = map.queryRenderedFeatures(bbox, { layers: ['drones-layer'] });
+
+        if (features.length > 0) {
+          touchActiveDroneId = features[0].properties.id;
+          map.dragPan.disable();
+        }
+      } else if (e.touches.length === 2 && touchActiveDroneId) {
+        e.preventDefault();
+        map.dragPan.disable();
+        map.touchZoomRotate.disable();
+
+        const feat = activeFeatures.find(f => f.properties.id === touchActiveDroneId);
+        if (feat) {
+          initialTouchAngle = getTouchAngle(e.touches[0], e.touches[1]);
+          initialDroneRotation = feat.properties.rotation || 0;
+        }
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (!touchActiveDroneId) return;
+
+      if (e.touches.length === 1) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const lngLat = map.unproject([touch.clientX, touch.clientY]);
+        const feat = activeFeatures.find(f => f.properties.id === touchActiveDroneId);
+        if (feat) {
+          feat.geometry.coordinates = [lngLat.lng, lngLat.lat];
+          requestUpdateGeoJSON();
+        }
+      } else if (e.touches.length === 2) {
+        e.preventDefault();
+        const currentAngle = getTouchAngle(e.touches[0], e.touches[1]);
+        const angleDiff = currentAngle - initialTouchAngle;
+
+        const feat = activeFeatures.find(f => f.properties.id === touchActiveDroneId);
+        if (feat) {
+          feat.properties.rotation = (initialDroneRotation + angleDiff) % 360;
+          requestUpdateGeoJSON();
+        }
+      }
+    }, { passive: false });
+
+    const endTouch = () => {
+      if (touchActiveDroneId) {
+        touchActiveDroneId = null;
+        map.dragPan.enable();
+        map.touchZoomRotate.enable();
+      }
+    };
+
+    canvas.addEventListener('touchend', endTouch);
+    canvas.addEventListener('touchcancel', endTouch);
+
+    window.addEventListener('keydown', (e) => {
+      if (!hoveredDroneId) return;
+      const key = e.key.toLowerCase();
+      if (key === 'a' || key === 'd') {
+        const feat = activeFeatures.find(f => f.properties.id === hoveredDroneId);
+        if (feat) {
+          const delta = (key === 'a') ? -5 : 5;
+          feat.properties.rotation = (feat.properties.rotation || 0) + delta;
+          requestUpdateGeoJSON();
+        }
+      }
+    });
+
+    const mapCanvas = map.getCanvasContainer();
+    mapCanvas.addEventListener('wheel', (e) => {
+      const point = [e.clientX, e.clientY];
+      const bbox = [
+        [point[0] - 15, point[1] - 15],
+        [point[0] + 15, point[1] + 15]
+      ];
+      
+      const features = map.queryRenderedFeatures(bbox, { layers: ['drones-layer'] });
+      
+      if (features.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const id = features[0].properties.id;
+        const feat = activeFeatures.find(f => f.properties.id === id);
+        
+        if (feat) {
+          const delta = Math.sign(e.deltaY);
+          feat.properties.rotation = (feat.properties.rotation || 0) + delta * 5;
+          requestUpdateGeoJSON();
+        }
+      }
+    }, { passive: false, capture: true });
+
+    applySettings(savedSettings);
+    updateTrajectoryStyle();
+
+    disclaimerEnabled.addEventListener('change', () => {
+      renderDisclaimerPanel();
+      saveSettings();
+    });
+
+    disclaimerTextInput.addEventListener('input', () => {
+      renderDisclaimerPanel();
+      saveSettings();
+    });
+
+    disclaimerOpacitySlider.addEventListener('input', (e) => {
+      disclaimerOpacityValue.textContent = e.target.value + '%';
+      renderDisclaimerPanel();
+      saveSettings();
+    });
+
+    trajectoryEnabled.addEventListener('change', () => {
+      updateTrajectoryStyle();
+      saveSettings();
+    });
+
+    trajectoryAutocolor.addEventListener('change', () => {
+      updateTrajectoryStyle();
+      requestUpdateGeoJSON();
+      saveSettings();
+    });
+
+    trajectoryColor.addEventListener('input', () => {
+      updateTrajectoryStyle();
+      requestUpdateGeoJSON();
+      saveSettings();
+    });
+
+    trajectoryLengthSlider.addEventListener('input', (e) => {
+      trajectoryLengthValue.textContent = e.target.value + ' км';
+      requestUpdateGeoJSON();
+      saveSettings();
+    });
+
+    trajectoryWidthSlider.addEventListener('input', (e) => {
+      trajectoryWidthValue.textContent = e.target.value + 'px';
+      updateTrajectoryStyle();
+      saveSettings();
+    });
+
+    trajectoryOpacitySlider.addEventListener('input', (e) => {
+      trajectoryOpacityValue.textContent = e.target.value + '%';
+      updateTrajectoryStyle();
+      saveSettings();
+    });
+
+    toggleMapLabels.addEventListener('change', () => {
+      const showMapLabels = toggleMapLabels.checked;
+      if (showMapLabels) {
+        customPlaceMarkers.forEach(m => m.remove());
+        map.setLayoutProperty('place-labels', 'visibility', 'visible');
+      } else {
+        customPlaceMarkers.forEach(m => {
+          m.addTo(map);
+        });
+        map.setLayoutProperty('place-labels', 'visibility', 'none');
+      }
+      saveSettings();
+    });
+
+    saturationSlider.addEventListener('input', (e) => {
+      setMapSaturation(e.target.value);
+      saveSettings();
+    });
+
+    townsBrightnessSlider.addEventListener('input', (e) => {
+      setTownsBrightness(e.target.value);
+      saveSettings();
+    });
+
+    watermarkEnabled.addEventListener('change', () => {
+      renderWatermark();
+      saveSettings();
+    });
+
+    watermarkText.addEventListener('input', () => {
+      renderWatermark();
+      saveSettings();
+    });
+
+    watermarkColor.addEventListener('input', () => {
+      renderWatermark();
+      saveSettings();
+    });
+
+    watermarkOpacitySlider.addEventListener('input', () => {
+      syncWatermarkUI();
+      renderWatermark();
+      saveSettings();
+    });
+
+    watermarkSizeSlider.addEventListener('input', (e) => {
+      syncWatermarkUI();
+      renderWatermark();
+      saveSettings();
+    });
+
+    watermarkDensitySlider.addEventListener('input', () => {
+      syncWatermarkUI();
+      renderWatermark();
+      saveSettings();
+    });
+
+    watermarkAngleSlider.addEventListener('input', () => {
+      syncWatermarkUI();
+      renderWatermark();
+      saveSettings();
+    });
+
+    window.addEventListener('resize', () => {
+      if (watermarkEnabled.checked) renderWatermark();
+    });
+  });
+
+  async function ensureImageLoaded(fileName) {
+    if (loadedImages.has(fileName)) return;
+    return new Promise((resolve) => {
+      map.loadImage(`icons/${fileName}`, (error, image) => {
+        if (!error && image) {
+          if (!map.hasImage(fileName)) {
+            map.addImage(fileName, image);
+          }
+          loadedImages.add(fileName);
+        }
+        resolve();
+      });
+    });
+  }
+
+  // MapLibre icon-rotate: 0 = иконка в своём исходном ориентации (смотрит влево = запад = 270°).
+  // При userRotation=N иконка поворачивается на N° по часовой от исходного.
+  // Значит иконка смотрит в сторону (270 + userRotation) по компасу.
+  // Хвост траектории уходит В ПРОТИВОПОЛОЖНУЮ сторону от носа = (270 + userRotation + 180) % 360.
+  // Но getTrajectoryCoords принимает компасный азимут куда ИДТИ (направление хвоста),
+  // поэтому возвращаем именно направление хвоста.
+  function getActualHeading(fileName, userRotation) {
+    // Нос иконки: 270 + userRotation (компас)
+    // Хвост: нос + 180
+    return (270 + userRotation + 180) % 360;
+  }
+
+  function getTrajectoryCoords(lng, lat, compassBearing) {
+    // Стандартная haversine-формула для точки по заданному азимуту и расстоянию
+    // compassBearing: 0=север, 90=восток, 180=юг, 270=запад
+    const bearing = compassBearing * (Math.PI / 180);
+    const earthRadius = 6378137;
+    const distanceKm = parseInt(trajectoryLengthSlider ? trajectoryLengthSlider.value : 10, 10);
+    const distance = distanceKm * 1000;
+    const angDist = distance / earthRadius;
+
+    const lat1 = lat * (Math.PI / 180);
+    const lon1 = lng * (Math.PI / 180);
+
+    const lat2 = Math.asin(
+      Math.sin(lat1) * Math.cos(angDist) +
+      Math.cos(lat1) * Math.sin(angDist) * Math.cos(bearing)
+    );
+
+    const lon2 = lon1 + Math.atan2(
+      Math.sin(bearing) * Math.sin(angDist) * Math.cos(lat1),
+      Math.cos(angDist) - Math.sin(lat1) * Math.sin(lat2)
+    );
+
+    return [
+      lon2 * (180 / Math.PI),
+      lat2 * (180 / Math.PI)
+    ];
+  }
+
+  async function addIconMarker(fileName, typeName) {
+    await ensureImageLoaded(fileName);
+
+    const center = map.getCenter();
+    const randomOffsetLng = (Math.random() - 0.5) * 0.01;
+    const randomOffsetLat = (Math.random() - 0.5) * 0.01;
+    const startCoords = [center.lng + randomOffsetLng, center.lat + randomOffsetLat];
+
+    markerCounters[typeName] = (markerCounters[typeName] || 0) + 1;
+    const title = `${typeName} ${markerCounters[typeName]}`;
+    const id = 'marker_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
+    const initialRotation = 0;
+    const heading = getActualHeading(fileName, initialRotation);
+    const endCoords = getTrajectoryCoords(startCoords[0], startCoords[1], heading);
+
+    const isAutocolor = trajectoryAutocolor ? trajectoryAutocolor.checked : true;
+    const color = isAutocolor ? (ICON_AUTO_COLORS[fileName] || '#38bdf8') : trajectoryColor.value;
+
+    const newFeature = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: startCoords
+      },
+      properties: {
+        id: id,
+        title: title,
+        typeName: typeName,
+        fileName: fileName,
+        iconImage: fileName,
+        rotation: initialRotation,
+        checked: false
+      }
+    };
+
+    const trajFeature = {
+      type: 'Feature',
+      id: id + '_line',
+      geometry: {
+        type: 'LineString',
+        coordinates: [startCoords, endCoords]
+      },
+      properties: {
+        parentId: id,
+        color: color
+      }
+    };
+
+    activeFeatures.push(newFeature);
+    activeTrajectories.push(trajFeature);
+    
+    updateGeoJSON();
+    updateUIList();
+    renderDisclaimerPanel();
+  }
+
+  let _rafId = null;
+  function requestUpdateGeoJSON() {
+    if (_rafId) return;
+    _rafId = requestAnimationFrame(() => {
+      updateGeoJSON();
+      _rafId = null;
+    });
+  }
+
+  function updateGeoJSON() {
+    const isAutocolor = trajectoryAutocolor ? trajectoryAutocolor.checked : true;
+    const fallbackColor = trajectoryColor ? trajectoryColor.value : '#38bdf8';
+
+    activeFeatures.forEach(feat => {
+      const line = activeTrajectories.find(t => t.properties.parentId === feat.properties.id);
+      if (line) {
+        const heading = getActualHeading(feat.properties.fileName, feat.properties.rotation || 0);
+        line.geometry.coordinates = [
+          feat.geometry.coordinates,
+          getTrajectoryCoords(feat.geometry.coordinates[0], feat.geometry.coordinates[1], heading)
+        ];
+        line.properties.color = isAutocolor ? (ICON_AUTO_COLORS[feat.properties.fileName] || '#38bdf8') : fallbackColor;
+      }
+    });
+
+    const source = map.getSource('drones-src');
+    if (source) {
+      source.setData({
+        type: 'FeatureCollection',
+        features: activeFeatures
+      });
+    }
+    // Trajectories are drawn on canvas via map.on('render'), no separate source needed
+  }
+
+  function removeSingleMarker(id) {
+    activeFeatures = activeFeatures.filter(f => f.properties.id !== id);
+    activeTrajectories = activeTrajectories.filter(t => t.properties.parentId !== id);
+    updateGeoJSON();
+    updateUIList();
+    renderDisclaimerPanel();
+  }
+
+  function updateUIList() {
+    const listContainer = document.getElementById('objects-list');
+    const countContainer = document.getElementById('objects-count');
+    
+    countContainer.innerText = activeFeatures.length;
+    listContainer.innerHTML = '';
+
+    if (activeFeatures.length === 0) {
+      listContainer.innerHTML = '<div class="empty-msg">Нет активных объектов на карте</div>';
+      return;
+    }
+
+    activeFeatures.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'object-item';
+
+      el.onclick = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.classList.contains('delete')) return;
+        map.flyTo({ center: item.geometry.coordinates, zoom: Math.max(map.getZoom(), 10), speed: 1.2 });
+      };
+
+      el.innerHTML = `
+        <div class="object-item-info">
+          <input type="checkbox" ${item.properties.checked ? 'checked' : ''} onclick="event.stopPropagation(); toggleCheck('${item.properties.id}')">
+          <img src="icons/${item.properties.fileName}" alt="icon">
+          <span class="object-item-name">${item.properties.title}</span>
+        </div>
+        <div class="control-btn delete" onclick="event.stopPropagation(); removeSingleMarker('${item.properties.id}')">✕</div>
+      `;
+
+      listContainer.appendChild(el);
+    });
+  }
+
+  function toggleCheck(id) {
+    const item = activeFeatures.find(f => f.properties.id === id);
+    if (item) {
+      item.properties.checked = !item.properties.checked;
+    }
+  }
+
+  function selectAllObjects(status) {
+    activeFeatures.forEach(f => f.properties.checked = status);
+    updateUIList();
+  }
+
+  function deleteSelectedObjects() {
+    const idsToRemove = new Set(activeFeatures.filter(f => f.properties.checked).map(f => f.properties.id));
+    activeFeatures = activeFeatures.filter(f => !idsToRemove.has(f.properties.id));
+    activeTrajectories = activeTrajectories.filter(t => !idsToRemove.has(t.properties.parentId));
+    updateGeoJSON();
+    updateUIList();
+    renderDisclaimerPanel();
+  }
+
+  async function takeScreenshot() {
+    if (document.getElementById('screenshot-selection-layer')) return;
+
+    const uiPanel = document.getElementById('ui-panel');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsMenu = document.getElementById('settings-menu');
+    const toast = document.getElementById('toast');
+    const oldPanelDisplay = uiPanel.style.display;
+    const oldSettingsBtnDisplay = settingsBtn.style.display;
+    const oldSettingsMenuDisplay = settingsMenu.style.display;
+    const oldLegendDisplay = legendPanel.style.display;
+    const oldMapLabelsVisibility = map.getLayoutProperty('place-labels', 'visibility');
+
+    uiPanel.style.display = 'none';
+    settingsBtn.style.display = 'none';
+    settingsMenu.style.display = 'none';
+    legendPanel.style.display = 'none';
+
+    const layer = document.createElement('div');
+    layer.id = 'screenshot-selection-layer';
+    const rect = document.createElement('div');
+    rect.id = 'screenshot-selection-rect';
+    const hint = document.createElement('div');
+    hint.id = 'screenshot-selection-hint';
+    hint.textContent = 'Зажми и выдели область • Esc / касание двумя пальцами — отмена';
+    layer.append(rect, hint);
+    document.body.appendChild(layer);
+
+    let startX = 0, startY = 0, currentX = 0, currentY = 0;
+    let dragging = false;
+    let finished = false;
+
+    const restoreUi = () => {
+      layer.remove();
+      uiPanel.style.display = oldPanelDisplay;
+      settingsBtn.style.display = oldSettingsBtnDisplay;
+      settingsMenu.style.display = oldSettingsMenuDisplay;
+      legendPanel.style.display = oldLegendDisplay;
+      renderDisclaimerPanel();
+      map.setLayoutProperty('place-labels', 'visibility', oldMapLabelsVisibility || 'none');
+    };
+
+    const drawRect = () => {
+      const left = Math.min(startX, currentX);
+      const top = Math.min(startY, currentY);
+      rect.style.left = `${left}px`;
+      rect.style.top = `${top}px`;
+      rect.style.width = `${Math.abs(currentX - startX)}px`;
+      rect.style.height = `${Math.abs(currentY - startY)}px`;
+      rect.style.display = 'block';
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape' && !finished) {
+        finished = true;
+        cleanupListeners();
+        restoreUi();
+      }
+    };
+    const cleanupListeners = () => {
+      layer.removeEventListener('pointerdown', onPointerDown);
+      layer.removeEventListener('pointermove', onPointerMove);
+      layer.removeEventListener('pointerup', onPointerUp);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+    const onPointerDown = (e) => {
+      if (finished) return;
+      e.preventDefault();
+      dragging = true;
+      startX = currentX = e.clientX;
+      startY = currentY = e.clientY;
+      drawRect();
+    };
+    const onPointerMove = (e) => {
+      if (!dragging || finished) return;
+      currentX = e.clientX;
+      currentY = e.clientY;
+      drawRect();
+    };
+    const onPointerUp = async (e) => {
+      if (!dragging || finished) return;
+      dragging = false;
+      currentX = e.clientX;
+      currentY = e.clientY;
+      drawRect();
+      finished = true;
+      cleanupListeners();
+
+      const left = Math.max(0, Math.min(startX, currentX));
+      const top = Math.max(0, Math.min(startY, currentY));
+      const width = Math.min(window.innerWidth, Math.max(startX, currentX)) - left;
+      const height = Math.min(window.innerHeight, Math.max(startY, currentY)) - top;
+      if (width < 12 || height < 12) {
+        restoreUi();
+        return;
+      }
+
+      const canvasRect = map.getCanvas().getBoundingClientRect();
+      const featuresInBox = activeFeatures.filter(f => {
+        const pt = map.project(f.geometry.coordinates);
+        const screenX = pt.x + canvasRect.left;
+        const screenY = pt.y + canvasRect.top;
+        return screenX >= left && screenX <= left + width && screenY >= top && screenY <= top + height;
+      });
+
+      let originalPixelRatio = null;
+      let highResolutionRenderEnabled = false;
+      try {
+        map.setLayoutProperty('place-labels', 'visibility', 'none');
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+        const initialCanvas = map.getCanvas();
+        const initialRect = initialCanvas.getBoundingClientRect();
+        originalPixelRatio = initialCanvas.width / Math.max(1, initialRect.width);
+        const scale = Math.min(4, 3840 / Math.max(width, height));
+
+        if (typeof map.setPixelRatio === 'function') {
+          const maxCanvasSide = 8192;
+          const safeRatio = Math.min(
+            Math.max(originalPixelRatio, scale),
+            maxCanvasSide / Math.max(1, initialRect.width),
+            maxCanvasSide / Math.max(1, initialRect.height)
+          );
+          if (safeRatio > originalPixelRatio + 0.01) {
+            map.setPixelRatio(safeRatio);
+            highResolutionRenderEnabled = true;
+            map.resize();
+            await new Promise(resolve => {
+              let done = false;
+              const finish = () => { if (!done) { done = true; map.off('idle', finish); resolve(); } };
+              map.once('idle', finish);
+              setTimeout(finish, 1800);
+              map.triggerRepaint();
+            });
+          }
+        }
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+        const mapCanvas = map.getCanvas();
+        const mapCanvasRect = mapCanvas.getBoundingClientRect();
+        const dprX = mapCanvas.width / Math.max(1, mapCanvasRect.width);
+        const dprY = mapCanvas.height / Math.max(1, mapCanvasRect.height);
+        const sx = Math.max(0, Math.round((left - mapCanvasRect.left) * dprX));
+        const sy = Math.max(0, Math.round((top - mapCanvasRect.top) * dprY));
+        const sw = Math.max(1, Math.min(Math.round(width * dprX), mapCanvas.width - sx));
+        const sh = Math.max(1, Math.min(Math.round(height * dprY), mapCanvas.height - sy));
+        const out = document.createElement('canvas');
+        out.width = Math.max(1, Math.round(width * scale));
+        out.height = Math.max(1, Math.round(height * scale));
+        const ctx = out.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        // Draw trajectory canvas (gradient lines) BEFORE icons (which are baked in mapCanvas)
+        // trajCanvas is a separate 2D canvas with same pixel coords as mapCanvas
+        try {
+          const tc = document.getElementById('traj-canvas');
+          if (tc && trajectoryEnabled.checked) {
+            const tcSx = Math.max(0, Math.round((left - mapCanvasRect.left) * dprX));
+            const tcSy = Math.max(0, Math.round((top - mapCanvasRect.top) * dprY));
+            const tcSw = Math.max(1, Math.min(Math.round(width * dprX), tc.width - tcSx));
+            const tcSh = Math.max(1, Math.min(Math.round(height * dprY), tc.height - tcSy));
+            if (tcSw > 0 && tcSh > 0) {
+              ctx.drawImage(tc, tcSx, tcSy, tcSw, tcSh, 0, 0, out.width, out.height);
+            }
+          }
+        } catch(e) {}
+
+        ctx.drawImage(mapCanvas, sx, sy, sw, sh, 0, 0, out.width, out.height);
+
+        ctx.save();
+        ctx.scale(scale, scale);
+
+        if (watermarkEnabled.checked) {
+          try {
+            const wmText = (watermarkText.value.trim() || 'ШОСТКА • ОГЛЯД');
+            const wmColor = watermarkColor.value;
+            const wmOpacity = parseInt(watermarkOpacitySlider.value, 10) / 100;
+            const wmSize = parseInt(watermarkSizeSlider.value, 10);
+            const wmDensity = parseInt(watermarkDensitySlider.value, 10);
+            const wmAngle = parseInt(watermarkAngleSlider.value, 10);
+
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+
+            const cols = Math.max(1, Math.round(Math.sqrt(wmDensity * screenW / Math.max(1, screenH))));
+            const rows = Math.max(1, Math.round(wmDensity / cols));
+            const cellW = screenW / cols;
+            const cellH = screenH / rows;
+
+            ctx.save();
+            ctx.font = `800 ${wmSize}px "Plus Jakarta Sans", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = wmColor;
+            ctx.globalAlpha = wmOpacity;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+            ctx.shadowBlur = 3;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 1;
+
+            for (let r = 0; r < rows; r++) {
+              for (let c = 0; c < cols; c++) {
+                const screenCx = c * cellW + cellW / 2;
+                const screenCy = r * cellH + cellH / 2;
+                const x = screenCx - left;
+                const y = screenCy - top;
+                if (x < -wmSize * 4 || y < -wmSize * 4 || x > width + wmSize * 4 || y > height + wmSize * 4) continue;
+
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(wmAngle * Math.PI / 180);
+                ctx.fillText(wmText, 0, 0);
+                ctx.restore();
+              }
+            }
+            ctx.restore();
+          } catch (wmErr) {}
+        }
+
+        places.forEach(place => {
+          const point = map.project(place.coords);
+          const x = point.x + mapCanvasRect.left - left;
+          const y = point.y + mapCanvasRect.top - top;
+          if (x < -180 || y < -30 || x > width + 180 || y > height + 30) return;
+          let fontSize = 10, weight = 600, letterSpacing = 0, shadowBlur = 2;
+          if (place.size === 'large') { fontSize = 13; weight = 800; letterSpacing = 0.4; shadowBlur = 6; }
+          else if (place.size === 'medium') { fontSize = 11; weight = 700; letterSpacing = 0.2; shadowBlur = 3; }
+          ctx.font = `${weight} ${fontSize}px "Plus Jakarta Sans", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#bbbbbb';
+          ctx.shadowColor = 'rgba(26,26,26,0.95)';
+          ctx.shadowBlur = shadowBlur;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 1;
+          if ('letterSpacing' in ctx) ctx.letterSpacing = `${letterSpacing}px`;
+          ctx.fillText(place.name, x, y);
+        });
+
+        if (disclaimerEnabled.checked) {
+          const loadCanvasImage = (src) => {
+            return new Promise((res) => {
+              const img = new Image();
+              img.crossOrigin = 'anonymous';
+              img.onload = () => res(img);
+              img.onerror = () => res(null);
+              img.src = src;
+            });
+          };
+
+          const uniqueTypesMap = new Map();
+          featuresInBox.forEach(f => {
+            const typeName = f.properties.typeName || f.properties.title.replace(/\s+\d+$/, '');
+            const fileName = f.properties.fileName;
+            if (!uniqueTypesMap.has(typeName)) {
+              uniqueTypesMap.set(typeName, fileName);
+            }
+          });
+
+          const discText = disclaimerTextInput.value.trim() || 'Мапа не є військовою. Усі дані взяті з відкритих телеграм-каналів і можуть бути неточними.';
+          const discOpacity = parseInt(disclaimerOpacitySlider.value, 10) / 100;
+
+          const padding = 12;
+          const discWidth = Math.min(320, width - 20);
+          
+          ctx.save();
+          ctx.font = '700 11.5px "Plus Jakarta Sans", sans-serif';
+          
+          const words = discText.split(' ');
+          let lines = [];
+          let currentLine = words[0] || '';
+          for (let i = 1; i < words.length; i++) {
+            const testLine = currentLine + ' ' + words[i];
+            if (ctx.measureText(testLine).width > discWidth - padding * 2) {
+              lines.push(currentLine);
+              currentLine = words[i];
+            } else {
+              currentLine = testLine;
+            }
+          }
+          if (currentLine) lines.push(currentLine);
+
+          const lineHeight = 16;
+          const textBlockHeight = lines.length * lineHeight;
+
+          ctx.font = '800 12px "Plus Jakarta Sans", sans-serif';
+          const itemsLayout = [];
+          let currentRow = [];
+          let currentX = 0;
+          const maxX = discWidth - padding * 2;
+          const gapBetweenItems = 12;
+
+          for (const [typeName, fileName] of uniqueTypesMap.entries()) {
+            const itemWidth = 20 + 4 + ctx.measureText(typeName).width;
+            if (currentRow.length > 0 && currentX + itemWidth > maxX) {
+              itemsLayout.push(currentRow);
+              currentRow = [];
+              currentX = 0;
+            }
+            currentRow.push({ typeName, fileName, width: itemWidth });
+            currentX += itemWidth + gapBetweenItems;
+          }
+          if (currentRow.length > 0) {
+            itemsLayout.push(currentRow);
+          }
+
+          const rowHeight = 24;
+          const iconBlockHeight = itemsLayout.length * rowHeight;
+          const discHeight = padding * 2 + textBlockHeight + (itemsLayout.length > 0 ? 8 + iconBlockHeight : 0);
+
+          const discX = 15;
+          const discY = height - discHeight - 15;
+
+          ctx.globalAlpha = discOpacity;
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+          ctx.shadowBlur = 12;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 4;
+
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(discX, discY, discWidth, discHeight, 10);
+          } else {
+            ctx.rect(discX, discY, discWidth, discHeight);
+          }
+          ctx.fill();
+
+          ctx.shadowColor = 'transparent';
+          ctx.globalAlpha = 1.0;
+
+          ctx.fillStyle = '#1a1a1a';
+          ctx.font = '700 11.5px "Plus Jakarta Sans", sans-serif';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
+
+          lines.forEach((line, index) => {
+            ctx.fillText(line, discX + padding, discY + padding + index * lineHeight);
+          });
+
+          if (itemsLayout.length > 0) {
+            let startY = discY + padding + textBlockHeight + 8;
+
+            for (let r = 0; r < itemsLayout.length; r++) {
+              let drawX = discX + padding;
+              const rowY = startY + r * rowHeight;
+
+              for (const item of itemsLayout[r]) {
+                const img = await loadCanvasImage(`icons/${item.fileName}`);
+                if (img) {
+                  ctx.drawImage(img, drawX, rowY + 2, 18, 18);
+                }
+                
+                ctx.fillStyle = '#0f172a';
+                ctx.font = '800 12px "Plus Jakarta Sans", sans-serif';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(item.typeName, drawX + 22, rowY + 11);
+
+                drawX += item.width + gapBetweenItems;
+              }
+            }
+          }
+
+          ctx.restore();
+        }
+
+        ctx.restore();
+
+        const blob = await new Promise(resolve => out.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error('Не удалось сформировать PNG');
+        let copied = false;
+        if (navigator.clipboard && window.ClipboardItem) {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            copied = true;
+          } catch (err) {}
+        }
+        if (!copied) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `map-screenshot-${out.width}x${out.height}.png`;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+        }
+        toast.textContent = copied
+          ? `Скриншот ${out.width}×${out.height} скопирован в буфер обмена`
+          : `Скриншот ${out.width}×${out.height} сохранён в PNG`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+      } catch (err) {
+        toast.textContent = 'Ошибка скриншота';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+      } finally {
+        if (highResolutionRenderEnabled && originalPixelRatio !== null && typeof map.setPixelRatio === 'function') {
+          try {
+            map.setPixelRatio(originalPixelRatio);
+            map.resize();
+            map.triggerRepaint();
+          } catch (restoreError) {}
+        }
+        restoreUi();
+      }
+    };
+
+    layer.addEventListener('pointerdown', onPointerDown);
+    layer.addEventListener('pointermove', onPointerMove);
+    layer.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('keydown', onKeyDown);
+  }
+
+  const settingsBtn = document.getElementById('settings-btn');
+  const settingsMenu = document.getElementById('settings-menu');
+
+  settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    settingsBtn.classList.toggle('active');
+    settingsMenu.classList.toggle('open');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!settingsMenu.contains(e.target) && !settingsBtn.contains(e.target)) {
+      settingsMenu.classList.remove('open');
+      settingsBtn.classList.remove('active');
+    }
+  });
+
+  // ===== LAYERS SWITCHER =====
+  (function() {
+    const layersBtn = document.getElementById('layers-btn');
+    const layersMenu = document.getElementById('layers-menu');
+    const currentFile = location.pathname.split('/').pop() || 'index.html';
+
+    // Mark active layer
+    document.querySelectorAll('.layer-option').forEach(opt => {
+      if (opt.dataset.layer === currentFile) opt.classList.add('active');
+    });
+
+    layersBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      layersBtn.classList.toggle('active');
+      layersMenu.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!layersMenu.contains(e.target) && !layersBtn.contains(e.target)) {
+        layersMenu.classList.remove('open');
+        layersBtn.classList.remove('active');
+      }
+    });
+  })();
+
+  function switchLayer(filename) {
+    if ((location.pathname.split('/').pop() || 'index.html') === filename) {
+      document.getElementById('layers-menu').classList.remove('open');
+      document.getElementById('layers-btn').classList.remove('active');
+      return;
+    }
+    location.href = filename;
+  }
+
+</script>
+
+</body>
+</html>
