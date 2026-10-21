@@ -883,7 +883,7 @@
   const SHOSTKA_CENTER = [33.4729, 51.8638];
   const TARGET_ZOOM = 9.3;
 
-  const STORAGE_KEY = 'shostka_map_settings_v8';
+  const STORAGE_KEY = 'shostka_map_settings_v9';
 
   let activeFeatures = [];
   let activeTrajectories = [];
@@ -999,6 +999,11 @@
       size: 28,
       density: 8,
       angle: -30
+    },
+    drone: {
+      direction: true,
+      labels: true,
+      circle500m: true
     }
   };
 
@@ -1014,7 +1019,8 @@
         gromady: { ...defaultSettings.gromady, ...(parsed.gromady || {}) },
         mask: { ...defaultSettings.mask, ...(parsed.mask || {}) },
         disclaimer: { ...defaultSettings.disclaimer, ...(parsed.disclaimer || {}) },
-        watermark: { ...defaultSettings.watermark, ...(parsed.watermark || {}) }
+        watermark: { ...defaultSettings.watermark, ...(parsed.watermark || {}) },
+        drone: { ...defaultSettings.drone, ...(parsed.drone || {}) }
       };
     } catch (e) {
       return JSON.parse(JSON.stringify(defaultSettings));
@@ -1055,6 +1061,11 @@
           size: parseInt(watermarkSizeSlider.value, 10),
           density: parseInt(watermarkDensitySlider.value, 10),
           angle: parseInt(watermarkAngleSlider.value, 10)
+        },
+        drone: {
+          direction: document.getElementById('drone-direction-enabled').checked,
+          labels: document.getElementById('drone-labels-enabled').checked,
+          circle500m: document.getElementById('drone-500m-enabled').checked
         }
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
@@ -1273,6 +1284,15 @@
     
     syncWatermarkUI();
     renderWatermark();
+
+    if (s.drone) {
+      document.getElementById('drone-direction-enabled').checked = s.drone.direction !== false;
+      document.getElementById('drone-labels-enabled').checked = s.drone.labels !== false;
+      document.getElementById('drone-500m-enabled').checked = s.drone.circle500m !== false;
+      settingsDroneDirection = s.drone.direction !== false;
+      settingsDroneLabels = s.drone.labels !== false;
+      settingsDrone500m = s.drone.circle500m !== false;
+    }
   }
 
   // =========== POINT IN POLYGON ===========
@@ -1410,7 +1430,25 @@
       ukraineGeojson = await res.json();
     } catch(e) { ukraineGeojson = null; }
 
-    // ===== TOWNS LAYER (ПОМЕЩАЕТСЯ НИЖЕ ВСЕХ ТРАСС И НАЗВАНИЙ) =====
+    // ===== TOWNS LAYER — BELOW ALL OSM ROADS & LABELS =====
+    // Find the first symbol/road layer in the base style to insert before it
+    const _allLayers = map.getStyle().layers;
+    // We want to insert BELOW roads and labels: find first road or label layer
+    let _firstRoadOrLabel = null;
+    for (const l of _allLayers) {
+      if (
+        l.type === 'symbol' ||
+        (l.type === 'line' && l['source-layer'] && (
+          l['source-layer'].includes('road') ||
+          l['source-layer'].includes('transportation') ||
+          l['source-layer'].includes('highway')
+        ))
+      ) {
+        _firstRoadOrLabel = l.id;
+        break;
+      }
+    }
+
     map.addSource('towns-src', { type: 'geojson', data: 'towns.geojson' });
     map.addLayer({
       id: 'towns-layer',
@@ -1420,7 +1458,7 @@
         'fill-color': '#f6e0d2',
         'fill-opacity': 1.0
       }
-    });
+    }, _firstRoadOrLabel || undefined);
 
     // ===== SOURCES =====
     map.addSource('ukraine-src', { type: 'geojson', data: ukraineGeojson || 'ukraine.geojson' });
@@ -1504,7 +1542,27 @@
       }
     });
 
-    // ===== CUSTOM PLACES LAYER (ТОЧКИ И КАСТОМНЫЕ НАЗВАНИЯ) =====
+    // ===== CUSTOM PLACES LAYER — BELOW OSM SETTLEMENT LABELS =====
+    // Find first OSM place/settlement symbol layer to insert before it
+    const _allLayers2 = map.getStyle().layers;
+    let _firstPlaceLabel = null;
+    for (const l of _allLayers2) {
+      if (l.type === 'symbol' && l['source-layer'] && (
+        l['source-layer'].includes('place') ||
+        l['source-layer'].includes('settlement') ||
+        l['source-layer'].includes('label')
+      )) {
+        _firstPlaceLabel = l.id;
+        break;
+      }
+    }
+    // Fallback: first symbol layer
+    if (!_firstPlaceLabel) {
+      for (const l of _allLayers2) {
+        if (l.type === 'symbol') { _firstPlaceLabel = l.id; break; }
+      }
+    }
+
     map.addSource('custom-places-src', { type: 'geojson', data: 'places.geojson' });
 
     map.addLayer({
@@ -1523,7 +1581,7 @@
         'circle-stroke-width': 2,
         'circle-stroke-color': '#333333'
       }
-    });
+    }, _firstPlaceLabel || undefined);
 
     map.addLayer({
       id: 'custom-places-label',
@@ -1540,7 +1598,7 @@
         'text-halo-color': '#ffffff',
         'text-halo-width': 2.5
       }
-    });
+    }, _firstPlaceLabel || undefined);
 
     updateCustomPlacesStyle();
     updateGromadyStyle();
@@ -2020,16 +2078,19 @@
     document.getElementById('drone-direction-enabled').addEventListener('change', (e) => {
       settingsDroneDirection = e.target.checked;
       window.drawDroneCanvas && window.drawDroneCanvas();
+      saveSettings();
     });
 
     document.getElementById('drone-labels-enabled').addEventListener('change', (e) => {
       settingsDroneLabels = e.target.checked;
       window.drawDroneCanvas && window.drawDroneCanvas();
+      saveSettings();
     });
 
     document.getElementById('drone-500m-enabled').addEventListener('change', (e) => {
       settingsDrone500m = e.target.checked;
       window.drawRadiusCanvas && window.drawRadiusCanvas();
+      saveSettings();
     });
 
     disclaimerEnabled.addEventListener('change', () => {
@@ -2334,7 +2395,7 @@
       uiPanel.style.display = oldPanelDisplay;
       settingsBtn.style.display = oldSettingsBtnDisplay;
       settingsMenu.style.display = oldSettingsMenuDisplay;
-      legendPanel.style.display = oldLegendDisplay;
+      // Let renderDisclaimerPanel decide visibility based on toggle state
       renderDisclaimerPanel();
     };
 
