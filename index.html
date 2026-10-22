@@ -37,7 +37,7 @@
 
     .controls-panel {
       position: absolute;
-      top: 52px; left: 10px; /* Сдвинуто вниз под верхнюю панель времени */
+      top: 52px; left: 10px;
       z-index: 1000;
       background: rgba(18, 18, 18, 0.92);
       backdrop-filter: blur(10px);
@@ -201,7 +201,6 @@
       padding: 8px 0;
     }
 
-    /* ===== DISCLAIMER PANEL ===== */
     .legend-panel {
       position: absolute;
       bottom: 20px;
@@ -262,7 +261,6 @@
       object-fit: contain;
     }
 
-    /* ===== DATETIME PANEL (СЛЕВА СВЕРХУ, В ОДИН РЯДОК, ШРИФТ INTER) ===== */
     .datetime-panel {
       position: absolute;
       top: 10px;
@@ -554,7 +552,6 @@
   </div>
 </div>
 
-<!-- Окошко даты и времени слева сверху -->
 <div class="datetime-panel" id="datetime-panel">
   <div class="datetime-text" id="datetime-text-view">Станом на 22.10.2026 17:24</div>
 </div>
@@ -572,6 +569,54 @@
     <button class="settings-close" id="settings-close" type="button" aria-label="Закрити налаштування"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="settings-menu-body">
+  <div class="settings-group">
+    <div class="settings-group-title">Полігони DeepState</div>
+    <div class="settings-row">
+      <div class="settings-label">Окуповано після 2022</div>
+      <label class="toggle">
+        <input type="checkbox" id="ds-occupied-enabled" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="settings-row-vertical">
+      <div class="settings-label">Прозорість (Окуповано)</div>
+      <div class="range-control">
+        <input type="range" id="ds-occupied-opacity" class="range-slider" min="0" max="100" value="40">
+        <span class="range-value" id="ds-occupied-opacity-val">40%</span>
+      </div>
+    </div>
+
+    <div class="settings-row" style="margin-top: 8px;">
+      <div class="settings-label">Сіра зона (Невідомо)</div>
+      <label class="toggle">
+        <input type="checkbox" id="ds-unknown-enabled" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="settings-row-vertical">
+      <div class="settings-label">Прозорість (Сіра зона)</div>
+      <div class="range-control">
+        <input type="range" id="ds-unknown-opacity" class="range-slider" min="0" max="100" value="60">
+        <span class="range-value" id="ds-unknown-opacity-val">60%</span>
+      </div>
+    </div>
+
+    <div class="settings-row" style="margin-top: 8px;">
+      <div class="settings-label">Крим / ОРДЛО</div>
+      <label class="toggle">
+        <input type="checkbox" id="ds-crimea-enabled" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="settings-row-vertical">
+      <div class="settings-label">Прозорість (Крим/ОРДЛО)</div>
+      <div class="range-control">
+        <input type="range" id="ds-crimea-opacity" class="range-slider" min="0" max="100" value="40">
+        <span class="range-value" id="ds-crimea-opacity-val">40%</span>
+      </div>
+    </div>
+  </div>
+
   <div class="settings-group">
     <div class="settings-group-title">Кастомні назви н.п.</div>
     <div class="settings-row">
@@ -891,7 +936,6 @@
   </button>
 </div>
 
-<!-- Дисклеймер (слева снизу) -->
 <div class="legend-panel" id="legend-panel">
   <div class="disclaimer-text" id="disclaimer-text-view">Мапа не є військовою. Усі дані взяті з відкритих телеграм-каналів і можуть бути неточними.</div>
   <div class="legend-items" id="legend-items-view"></div>
@@ -949,7 +993,6 @@
   let settingsDroneLabels = true;
   let settingsDrone500m = true;
 
-  // Custom Places Controls
   const customPlacesEnabled = document.getElementById('custom-places-enabled');
   const customPlacesDotsEnabled = document.getElementById('custom-places-dots-enabled');
   const customPlacesPosition = document.getElementById('custom-places-position');
@@ -962,7 +1005,6 @@
   const customPlacesHaloWidth = document.getElementById('custom-places-halo-width');
   const customPlacesHaloWidthVal = document.getElementById('custom-places-halo-width-val');
 
-  // Gromady Highlight Controls
   const gromadyHighlightEnabled = document.getElementById('gromady-highlight-enabled');
   const gromadyFillColor = document.getElementById('gromady-fill-color');
   const gromadyFillOpacity = document.getElementById('gromady-fill-opacity');
@@ -980,7 +1022,6 @@
   const disclaimerTextView = document.getElementById('disclaimer-text-view');
   const legendItemsView = document.getElementById('legend-items-view');
 
-  // Datetime Panel Elements
   const datetimeEnabled = document.getElementById('datetime-enabled');
   const datetimeAutoEnabled = document.getElementById('datetime-auto-enabled');
   const datetimeTextInput = document.getElementById('datetime-text-input');
@@ -998,6 +1039,18 @@
   const watermarkDensityValue = document.getElementById('watermark-density-value');
   const watermarkAngleSlider = document.getElementById('watermark-angle-slider');
   const watermarkAngleValue = document.getElementById('watermark-angle-value');
+
+  const dsOccupiedEnabled = document.getElementById('ds-occupied-enabled');
+  const dsOccupiedOpacity = document.getElementById('ds-occupied-opacity');
+  const dsOccupiedOpacityVal = document.getElementById('ds-occupied-opacity-val');
+
+  const dsUnknownEnabled = document.getElementById('ds-unknown-enabled');
+  const dsUnknownOpacity = document.getElementById('ds-unknown-opacity');
+  const dsUnknownOpacityVal = document.getElementById('ds-unknown-opacity-val');
+
+  const dsCrimeaEnabled = document.getElementById('ds-crimea-enabled');
+  const dsCrimeaOpacity = document.getElementById('ds-crimea-opacity');
+  const dsCrimeaOpacityVal = document.getElementById('ds-crimea-opacity-val');
 
   const defaultSettings = {
     customPlaces: {
@@ -1042,6 +1095,14 @@
       direction: true,
       labels: true,
       circle500m: true
+    },
+    deepstate: {
+      occupiedEnabled: true,
+      occupiedOpacity: 40,
+      unknownEnabled: true,
+      unknownOpacity: 60,
+      crimeaEnabled: true,
+      crimeaOpacity: 40
     }
   };
 
@@ -1059,7 +1120,8 @@
         disclaimer: { ...defaultSettings.disclaimer, ...(parsed.disclaimer || {}) },
         datetime: { ...defaultSettings.datetime, ...(parsed.datetime || {}) },
         watermark: { ...defaultSettings.watermark, ...(parsed.watermark || {}) },
-        drone: { ...defaultSettings.drone, ...(parsed.drone || {}) }
+        drone: { ...defaultSettings.drone, ...(parsed.drone || {}) },
+        deepstate: { ...defaultSettings.deepstate, ...(parsed.deepstate || {}) }
       };
     } catch (e) {
       return JSON.parse(JSON.stringify(defaultSettings));
@@ -1117,6 +1179,14 @@
           direction: document.getElementById('drone-direction-enabled').checked,
           labels: document.getElementById('drone-labels-enabled').checked,
           circle500m: document.getElementById('drone-500m-enabled').checked
+        },
+        deepstate: {
+          occupiedEnabled: dsOccupiedEnabled.checked,
+          occupiedOpacity: parseInt(dsOccupiedOpacity.value, 10),
+          unknownEnabled: dsUnknownEnabled.checked,
+          unknownOpacity: parseInt(dsUnknownOpacity.value, 10),
+          crimeaEnabled: dsCrimeaEnabled.checked,
+          crimeaOpacity: parseInt(dsCrimeaOpacity.value, 10)
         }
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
@@ -1325,6 +1395,27 @@
     map.setPaintProperty('gromady-fill', 'fill-opacity', opacity);
   }
 
+  function updateDeepStateStyles() {
+    if (map.getLayer('occupied-layer')) {
+      map.setLayoutProperty('occupied-layer', 'visibility', dsOccupiedEnabled.checked ? 'visible' : 'none');
+      const op = parseInt(dsOccupiedOpacity.value, 10) / 100;
+      map.setPaintProperty('occupied-layer', 'fill-opacity', op);
+      dsOccupiedOpacityVal.textContent = dsOccupiedOpacity.value + '%';
+    }
+    if (map.getLayer('unknown-layer')) {
+      map.setLayoutProperty('unknown-layer', 'visibility', dsUnknownEnabled.checked ? 'visible' : 'none');
+      const op = parseInt(dsUnknownOpacity.value, 10) / 100;
+      map.setPaintProperty('unknown-layer', 'fill-opacity', op);
+      dsUnknownOpacityVal.textContent = dsUnknownOpacity.value + '%';
+    }
+    if (map.getLayer('crimea-ordlo-layer')) {
+      map.setLayoutProperty('crimea-ordlo-layer', 'visibility', dsCrimeaEnabled.checked ? 'visible' : 'none');
+      const op = parseInt(dsCrimeaOpacity.value, 10) / 100;
+      map.setPaintProperty('crimea-ordlo-layer', 'fill-opacity', op);
+      dsCrimeaOpacityVal.textContent = dsCrimeaOpacity.value + '%';
+    }
+  }
+
   function applySettings(s) {
     if (s.customPlaces) {
       customPlacesEnabled.checked = s.customPlaces.enabled;
@@ -1382,6 +1473,16 @@
       settingsDroneLabels = s.drone.labels !== false;
       settingsDrone500m = s.drone.circle500m !== false;
     }
+
+    if (s.deepstate) {
+      dsOccupiedEnabled.checked = s.deepstate.occupiedEnabled !== false;
+      dsOccupiedOpacity.value = s.deepstate.occupiedOpacity ?? 40;
+      dsUnknownEnabled.checked = s.deepstate.unknownEnabled !== false;
+      dsUnknownOpacity.value = s.deepstate.unknownOpacity ?? 60;
+      dsCrimeaEnabled.checked = s.deepstate.crimeaEnabled !== false;
+      dsCrimeaOpacity.value = s.deepstate.crimeaOpacity ?? 40;
+    }
+    updateDeepStateStyles();
   }
 
   function pointInPolygon(point, polygon) {
@@ -1517,6 +1618,85 @@
       const res = await fetch('ukraine.geojson');
       ukraineGeojson = await res.json();
     } catch(e) { ukraineGeojson = null; }
+
+    try {
+      const dsResponse = await fetch('https://deepstatemap.live/api/history/last');
+      if (dsResponse.ok) {
+        const dsData = await dsResponse.json();
+        const dsGeojson = dsData.map || dsData;
+        const dsFeatures = dsGeojson.features || dsGeojson;
+
+        const occupiedFeatures = [];
+        const unknownFeatures = [];
+        const crimeaOrdloFeatures = [];
+
+        dsFeatures.forEach(feature => {
+          const props = feature.properties || {};
+          const name = (props.name || '').toLowerCase();
+          const styleUrl = (props.styleUrl || '').toLowerCase();
+          const fill = (props.fill || '').toLowerCase();
+
+          const isCrimeaOrOrdlo = name.includes('крим') || 
+                                   name.includes('крым') || 
+                                   name.includes('ордло') || 
+                                   name.includes('окупований крим');
+
+          const isUnknown = name.includes('статус невідомий') || 
+                            name.includes('unknown status') || 
+                            styleUrl.includes('bcaaa4') || 
+                            fill === '#bcaaa4';
+
+          const isOccupied = name.includes('окуповано') || 
+                             name.includes('occupied') || 
+                             styleUrl.includes('500000') || 
+                             styleUrl.includes('c85050');
+
+          if (isCrimeaOrOrdlo) {
+            crimeaOrdloFeatures.push(feature);
+          } else if (isUnknown) {
+            unknownFeatures.push(feature);
+          } else if (isOccupied) {
+            occupiedFeatures.push(feature);
+          }
+        });
+
+        map.addSource('occupied-src', { type: 'geojson', data: { type: 'FeatureCollection', features: occupiedFeatures } });
+        map.addSource('unknown-src', { type: 'geojson', data: { type: 'FeatureCollection', features: unknownFeatures } });
+        map.addSource('crimea-ordlo-src', { type: 'geojson', data: { type: 'FeatureCollection', features: crimeaOrdloFeatures } });
+
+        map.addLayer({
+          id: 'occupied-layer',
+          type: 'fill',
+          source: 'occupied-src',
+          paint: {
+            'fill-color': '#D65A5A',
+            'fill-opacity': 0.40
+          }
+        });
+
+        map.addLayer({
+          id: 'unknown-layer',
+          type: 'fill',
+          source: 'unknown-src',
+          paint: {
+            'fill-color': '#bab6b3',
+            'fill-opacity': 0.60
+          }
+        });
+
+        map.addLayer({
+          id: 'crimea-ordlo-layer',
+          type: 'fill',
+          source: 'crimea-ordlo-src',
+          paint: {
+            'fill-color': '#963C64',
+            'fill-opacity': 0.40
+          }
+        });
+      }
+    } catch (dsErr) {
+      console.warn('Не удалось загрузить данные DeepState:', dsErr);
+    }
 
     const _allLayers = map.getStyle().layers;
     let _firstRoadOrLabel = null;
@@ -1681,6 +1861,7 @@
 
     updateCustomPlacesStyle();
     updateGromadyStyle();
+    updateDeepStateStyles();
 
     const trajCanvas = document.createElement('canvas');
     trajCanvas.id = 'traj-canvas';
@@ -2144,22 +2325,36 @@
       saveSettings();
     });
 
+    [dsOccupiedEnabled, dsUnknownEnabled, dsCrimeaEnabled].forEach(el => {
+      el.addEventListener('change', () => {
+        updateDeepStateStyles();
+        saveSettings();
+      });
+    });
+
+    [dsOccupiedOpacity, dsUnknownOpacity, dsCrimeaOpacity].forEach(el => {
+      el.addEventListener('input', () => {
+        updateDeepStateStyles();
+        saveSettings();
+      });
+    });
+
     document.getElementById('drone-direction-enabled').addEventListener('change', (e) => {
       settingsDroneDirection = e.target.checked;
       window.drawDroneCanvas && window.drawDroneCanvas();
-      saveSettings();
+      saveSettings(); // Добавлено
     });
 
     document.getElementById('drone-labels-enabled').addEventListener('change', (e) => {
       settingsDroneLabels = e.target.checked;
       window.drawDroneCanvas && window.drawDroneCanvas();
-      saveSettings();
+      saveSettings(); // Добавлено
     });
 
     document.getElementById('drone-500m-enabled').addEventListener('change', (e) => {
       settingsDrone500m = e.target.checked;
       window.drawRadiusCanvas && window.drawRadiusCanvas();
-      saveSettings();
+      saveSettings(); // Добавлено
     });
 
     disclaimerEnabled.addEventListener('change', () => {
@@ -2347,7 +2542,8 @@
           disclaimer: { ...defaultSettings.disclaimer, ...(result.disclaimer || {}) },
           datetime: { ...defaultSettings.datetime, ...(result.datetime || {}) },
           watermark: { ...defaultSettings.watermark, ...(result.watermark || {}) },
-          drone: { ...defaultSettings.drone, ...(result.drone || {}) }
+          drone: { ...defaultSettings.drone, ...(result.drone || {}) },
+          deepstate: { ...defaultSettings.deepstate, ...(result.deepstate || {}) }
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
         applySettings(merged);
@@ -2721,7 +2917,6 @@
     }
   }
 
-  // ===== МАКСИМАЛЬНОЕ КАЧЕСТВО СКРИНШОТА =====
   async function takeScreenshot() {
     if (document.getElementById('screenshot-selection-layer')) return;
 
@@ -2892,7 +3087,6 @@
         ctx.save();
         ctx.scale(scale, scale);
 
-        // Отрисовка дисклеймера
         if (disclaimerEnabled.checked) {
           try {
             const discRect = legendPanel.getBoundingClientRect();
@@ -2994,7 +3188,6 @@
           } catch(e) {}
         }
 
-        // Отрисовка времени слева сверху в один рядок шрифтом Inter
         if (datetimeEnabled.checked) {
           try {
             const dtRect = datetimePanel.getBoundingClientRect();
