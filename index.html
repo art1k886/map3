@@ -13,12 +13,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
+    @font-face {
+      font-family: 'Inter';
+      src: url('./Inter.otf') format('opentype');
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: swap;
+    }
     * { box-sizing: border-box; }
 
     body {
       margin: 0; padding: 0;
       background-color: #121212;
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Inter', 'Plus Jakarta Sans', sans-serif;
       overflow: hidden;
       touch-action: manipulation;
     }
@@ -280,7 +287,7 @@
       padding: 9px 14px;
       border: 1px solid rgba(255,255,255,.18);
       border-radius: 8px;
-      font: 600 12px 'Plus Jakarta Sans', sans-serif;
+      font: 600 12px 'Inter', 'Plus Jakarta Sans', sans-serif;
       pointer-events: none;
       white-space: nowrap;
     }
@@ -565,12 +572,49 @@
 
     .watermark-tile {
       position: absolute;
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Inter', 'Plus Jakarta Sans', sans-serif;
       font-weight: 800;
       white-space: nowrap;
       user-select: none;
       pointer-events: none;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Оновлене компактне вікно налаштувань */
+    .settings-menu {
+      position: fixed; top: 58px; right: 12px; width: min(370px, calc(100vw - 24px));
+      min-width: 0; max-height: calc(100dvh - 74px); padding: 0; gap: 0;
+      overflow: hidden; background: #17191d; border: 1px solid #343840; border-radius: 13px;
+      box-shadow: 0 18px 55px rgba(0,0,0,.48); backdrop-filter: blur(16px);
+    }
+    .settings-menu.open { display: flex; }
+    .settings-menu-body { overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; padding: 10px; display:flex; flex-direction:column; gap:8px; }
+    .settings-menu-body::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    .settings-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 15px; border-bottom:1px solid #30343b; background:#1c1f24; }
+    .settings-header h2 { margin:0; color:#f1f3f5; font-size:14px; line-height:1.3; font-weight:800; letter-spacing:.1px; }
+    .settings-header p { margin:3px 0 0; color:#9299a4; font-size:10px; font-weight:500; }
+    .settings-close { display:grid; place-items:center; width:29px; height:29px; flex:0 0 auto; color:#cbd0d8; background:#292d34; border:1px solid #3a3f48; border-radius:7px; cursor:pointer; }
+    .settings-close:hover { background:#343943; color:#fff; }
+    .settings-close svg { width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round; }
+    .settings-group { gap:8px; padding:11px; background:#1d2025; border:1px solid #30343b; border-radius:9px; }
+    .settings-group-title { color:#c4cbd5; font-size:10px; letter-spacing:.55px; margin:0 0 2px; }
+    .settings-row { min-height:27px; gap:12px; }
+    .settings-label { color:#e0e4e9; font-size:11px; font-weight:600; }
+    .settings-label small { color:#929aa6; font-size:9px; line-height:1.4; }
+    .toggle { width:32px;height:18px; }
+    .toggle .slider::before { width:12px;height:12px;left:3px;bottom:3px; }
+    .toggle input:checked + .slider { background:#667b91; }
+    .toggle input:checked + .slider::before { transform:translateX(14px); }
+    .range-slider::-webkit-slider-thumb { background:#b6c0cc; }
+    .range-value { color:#d4dae2; font-variant-numeric:tabular-nums; }
+    .text-input,.select-input { background:#141619; border-color:#3a3f47; border-radius:6px; }
+    .text-input:focus,.select-input:focus { border-color:#8997a8; }
+    .settings-menu button:not(.settings-close) { border-radius:6px !important; }
+    .settings-menu .settings-label[style] { line-height:1.5; }
+    @media (max-width:600px) {
+      .settings-menu { top:56px; right:8px; width:calc(100vw - 16px); max-height:calc(100dvh - 66px); }
+      .settings-menu-body { padding:8px; gap:7px; }
+      .settings-group { padding:10px; }
     }
   </style>
 </head>
@@ -579,8 +623,8 @@
 <div id="map"></div>
 <div id="watermark-layer"></div>
 <div id="drop-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(37,99,235,0.18);border:4px dashed #60a5fa;pointer-events:none;align-items:center;justify-content:center;">
-  <div style="background:rgba(18,18,18,0.95);color:#f1f5f9;padding:24px 36px;border-radius:14px;font-size:18px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;border:2px solid #60a5fa;">
-    ⬆ Відпустіть файл налаштувань
+  <div style="background:rgba(18,18,18,0.95);color:#f1f5f9;padding:24px 36px;border-radius:14px;font-size:18px;font-weight:800;font-family:'Inter','Plus Jakarta Sans',sans-serif;border:2px solid #60a5fa;">
+    Відпустіть файл налаштувань
   </div>
 </div>
 
@@ -591,7 +635,12 @@
   </svg>
 </button>
 
-<div class="settings-menu" id="settings-menu">
+<div class="settings-menu" id="settings-menu" role="dialog" aria-label="Налаштування карти">
+  <div class="settings-header">
+    <div><h2>Налаштування карти</h2><p>Вигляд, об’єкти та підписи</p></div>
+    <button class="settings-close" id="settings-close" type="button" aria-label="Закрити налаштування"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="settings-menu-body">
   <div class="settings-group">
     <div class="settings-group-title">Кастомні назви н.п.</div>
     <div class="settings-row">
@@ -644,6 +693,13 @@
     <div class="settings-row">
       <div class="settings-label">Колір обводки</div>
       <input type="color" id="custom-places-halo-color" class="color-input" value="#ffffff">
+    </div>
+
+    <div class="settings-row-vertical">
+      <div class="settings-label">Товщина обводки <span class="range-value" id="custom-places-halo-width-val">2.5px</span></div>
+      <div class="range-control">
+        <input type="range" id="custom-places-halo-width" class="range-slider" min="0" max="5" step="0.5" value="2.5">
+      </div>
     </div>
   </div>
 
@@ -799,7 +855,8 @@
   <div class="settings-group">
     <div class="settings-group-title">Файл налаштувань</div>
     <div class="settings-label" style="color:#94a3b8;font-size:10px;line-height:1.4;">Збережіть усі налаштування у .txt файл, або перетягніть раніше збережений файл у вікно браузера щоб відновити.</div>
-    <button id="export-settings-btn" style="background:#2563eb;color:white;border:none;border-radius:6px;padding:8px 10px;font-size:11px;font-weight:700;cursor:pointer;width:100%;font-family:inherit;">⬇ Завантажити settings.txt</button>
+    <button id="export-settings-btn" style="background:#2563eb;color:white;border:none;border-radius:6px;padding:8px 10px;font-size:11px;font-weight:700;cursor:pointer;width:100%;font-family:inherit;">Завантажити settings.txt</button>
+  </div>
   </div>
 </div>
 
@@ -946,6 +1003,8 @@
   const customPlacesVillageSizeVal = document.getElementById('custom-places-village-size-val');
   const customPlacesColor = document.getElementById('custom-places-color');
   const customPlacesHaloColor = document.getElementById('custom-places-halo-color');
+  const customPlacesHaloWidth = document.getElementById('custom-places-halo-width');
+  const customPlacesHaloWidthVal = document.getElementById('custom-places-halo-width-val');
 
   // Gromady Highlight Controls
   const gromadyHighlightEnabled = document.getElementById('gromady-highlight-enabled');
@@ -985,7 +1044,8 @@
       townSize: 14,
       villageSize: 11,
       color: '#1a1a1a',
-      haloColor: '#ffffff'
+      haloColor: '#ffffff',
+      haloWidth: 2.5
     },
     gromady: {
       enabled: true,
@@ -1053,7 +1113,8 @@
           townSize: parseInt(customPlacesTownSize.value, 10),
           villageSize: parseInt(customPlacesVillageSize.value, 10),
           color: customPlacesColor.value,
-          haloColor: customPlacesHaloColor.value
+          haloColor: customPlacesHaloColor.value,
+          haloWidth: parseFloat(customPlacesHaloWidth.value)
         },
         gromady: {
           enabled: gromadyHighlightEnabled.checked,
@@ -1247,6 +1308,9 @@
 
     map.setPaintProperty('custom-places-label', 'text-color', customPlacesColor.value);
     map.setPaintProperty('custom-places-label', 'text-halo-color', customPlacesHaloColor.value);
+    const haloWidth = parseFloat(customPlacesHaloWidth.value);
+    customPlacesHaloWidthVal.textContent = haloWidth.toFixed(1).replace(/\.0$/, '') + 'px';
+    map.setPaintProperty('custom-places-label', 'text-halo-width', haloWidth);
   }
 
   function updateGromadyStyle() {
@@ -1268,6 +1332,7 @@
       customPlacesVillageSize.value = s.customPlaces.villageSize || 11;
       customPlacesColor.value = s.customPlaces.color || '#1a1a1a';
       customPlacesHaloColor.value = s.customPlaces.haloColor || '#ffffff';
+      customPlacesHaloWidth.value = s.customPlaces.haloWidth !== undefined ? s.customPlaces.haloWidth : 2.5;
     }
 
     if (s.gromady) {
@@ -1911,7 +1976,7 @@
         const feat = activeFeatures.find(f => f.properties.id === draggedFeatureId);
         if (feat) {
           feat.geometry.coordinates = [e.lngLat.lng, e.lngLat.lat];
-          requestUpdateGeoJSON();
+          requestUpdateGeoJSON(true);
         }
       }
     });
@@ -1921,6 +1986,7 @@
         draggedFeatureId = null;
         map.getCanvas().style.cursor = '';
         map.dragPan.enable();
+        updateGromadyHighlight();
       }
     });
 
@@ -1976,7 +2042,7 @@
         const feat = activeFeatures.find(f => f.properties.id === touchActiveDroneId);
         if (feat) {
           feat.geometry.coordinates = [lngLat.lng, lngLat.lat];
-          requestUpdateGeoJSON();
+          requestUpdateGeoJSON(true);
         }
       } else if (e.touches.length === 2) {
         e.preventDefault();
@@ -1986,7 +2052,7 @@
         const feat = activeFeatures.find(f => f.properties.id === touchActiveDroneId);
         if (feat) {
           feat.properties.rotation = (initialDroneRotation + angleDiff) % 360;
-          requestUpdateGeoJSON();
+          requestUpdateGeoJSON(true);
         }
       }
     }, { passive: false });
@@ -1996,6 +2062,7 @@
         touchActiveDroneId = null;
         map.dragPan.enable();
         map.touchZoomRotate.enable();
+        updateGromadyHighlight();
       }
     };
 
@@ -2056,7 +2123,7 @@
       });
     });
 
-    [customPlacesTownSize, customPlacesVillageSize, customPlacesColor, customPlacesHaloColor].forEach(el => {
+    [customPlacesTownSize, customPlacesVillageSize, customPlacesColor, customPlacesHaloColor, customPlacesHaloWidth].forEach(el => {
       el.addEventListener('input', () => {
         updateCustomPlacesStyle();
         saveSettings();
@@ -2176,6 +2243,18 @@
         localStorage.setItem('shostka_map_view', JSON.stringify({ lng: c.lng, lat: c.lat, zoom: map.getZoom() }));
       } catch(e) {}
     });
+  });
+
+  document.getElementById('settings-close').addEventListener('click', () => {
+    document.getElementById('settings-menu').classList.remove('open');
+    document.getElementById('settings-btn').classList.remove('active');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.getElementById('settings-menu').classList.remove('open');
+      document.getElementById('settings-btn').classList.remove('active');
+    }
   });
 
   document.getElementById('settings-btn').addEventListener('click', () => {
@@ -2385,17 +2464,21 @@
   }
 
   let _rafId = null;
-  function requestUpdateGeoJSON() {
+  let _pendingHighlight = false;
+  function requestUpdateGeoJSON(skipHighlight = false) {
+    if (!skipHighlight) _pendingHighlight = true;
     if (_rafId) return;
     _rafId = requestAnimationFrame(() => {
-      updateGeoJSON();
+      updateGeoJSON(!_pendingHighlight);
+      _pendingHighlight = false;
       _rafId = null;
     });
   }
 
-  function updateGeoJSON() {
+  function updateGeoJSON(skipHighlight = false) {
+    const trajectoryById = new Map(activeTrajectories.map(line => [line.properties.parentId, line]));
     activeFeatures.forEach(feat => {
-      const line = activeTrajectories.find(t => t.properties.parentId === feat.properties.id);
+      const line = trajectoryById.get(feat.properties.id);
       if (line) {
         const heading = getActualHeading(feat.properties.fileName, feat.properties.rotation || 0);
         line.geometry.coordinates = [
@@ -2413,7 +2496,7 @@
         features: activeFeatures
       });
     }
-    updateGromadyHighlight();
+    if (!skipHighlight) updateGromadyHighlight();
   }
 
   function removeSingleMarker(id) {
