@@ -37,7 +37,7 @@
 
     .controls-panel {
       position: absolute;
-      top: 10px; left: 10px;
+      top: 52px; left: 10px; /* Сдвинуто вниз под верхнюю панель времени */
       z-index: 1000;
       background: rgba(18, 18, 18, 0.92);
       backdrop-filter: blur(10px);
@@ -48,7 +48,7 @@
       flex-direction: column;
       gap: 8px;
       width: 280px;
-      max-height: calc(100vh - 20px);
+      max-height: calc(100vh - 70px);
       overflow-y: auto;
       box-shadow: 0 8px 32px rgba(0,0,0,0.6);
       transition: max-height 0.3s ease;
@@ -217,7 +217,8 @@
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
       pointer-events: none;
       user-select: none;
-      max-width: 320px;
+      width: 280px;
+      max-width: 280px;
       transition: opacity 0.2s ease;
     }
 
@@ -226,7 +227,8 @@
         bottom: 10px;
         left: 10px;
         padding: 8px 10px;
-        max-width: 280px;
+        width: 260px;
+        max-width: 260px;
       }
     }
 
@@ -258,6 +260,37 @@
       width: 17px;
       height: 17px;
       object-fit: contain;
+    }
+
+    /* ===== DATETIME PANEL (СЛЕВА СВЕРХУ, В ОДИН РЯДОК, ШРИФТ INTER) ===== */
+    .datetime-panel {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1001;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 2px solid #000000;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+      user-select: none;
+      width: fit-content;
+      white-space: nowrap;
+      transition: opacity 0.2s ease;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .datetime-text {
+      color: #1a1a1a;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+      font-family: 'Inter', sans-serif;
     }
 
     #screenshot-selection-layer {
@@ -375,117 +408,6 @@
       stroke: #38bdf8;
     }
 
-    .settings-menu {
-      position: absolute;
-      top: 56px;
-      right: 10px;
-      z-index: 1099;
-      background: rgba(18, 18, 18, 0.96);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 10px;
-      padding: 10px 12px;
-      min-width: 280px;
-      max-height: calc(100vh - 70px);
-      overflow-y: auto;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.7);
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .settings-menu::-webkit-scrollbar { width: 4px; }
-    .settings-menu::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 4px;
-    }
-    .settings-menu.open {
-      display: flex;
-    }
-
-    .settings-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-    }
-
-    .settings-group-title {
-      color: #38bdf8;
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 2px;
-    }
-
-    .settings-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .settings-row-vertical {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .settings-label {
-      color: #e2e8f0;
-      font-size: 11px;
-      font-weight: 600;
-      line-height: 1.3;
-    }
-    .settings-label small {
-      display: block;
-      color: #64748b;
-      font-size: 9px;
-      font-weight: 500;
-      margin-top: 1px;
-    }
-
-    .toggle {
-      position: relative;
-      width: 36px;
-      height: 20px;
-      flex-shrink: 0;
-    }
-    .toggle input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .toggle .slider {
-      position: absolute;
-      inset: 0;
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 20px;
-      cursor: pointer;
-      transition: background 0.25s ease;
-    }
-    .toggle .slider::before {
-      content: "";
-      position: absolute;
-      height: 14px;
-      width: 14px;
-      left: 3px;
-      bottom: 3px;
-      background: #e2e8f0;
-      border-radius: 50%;
-      transition: transform 0.25s ease, background 0.25s ease;
-    }
-    .toggle input:checked + .slider {
-      background: #2563eb;
-    }
-    .toggle input:checked + .slider::before {
-      transform: translateX(16px);
-      background: #ffffff;
-    }
-
     .range-control {
       display: flex;
       align-items: center;
@@ -580,12 +502,14 @@
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
     }
 
-    /* Оновлене компактне вікно налаштувань */
     .settings-menu {
       position: fixed; top: 58px; right: 12px; width: min(370px, calc(100vw - 24px));
       min-width: 0; max-height: calc(100dvh - 74px); padding: 0; gap: 0;
       overflow: hidden; background: #17191d; border: 1px solid #343840; border-radius: 13px;
       box-shadow: 0 18px 55px rgba(0,0,0,.48); backdrop-filter: blur(16px);
+      display: none;
+      flex-direction: column;
+      z-index: 1099;
     }
     .settings-menu.open { display: flex; }
     .settings-menu-body { overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; padding: 10px; display:flex; flex-direction:column; gap:8px; }
@@ -598,19 +522,21 @@
     .settings-close svg { width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round; }
     .settings-group { gap:8px; padding:11px; background:#1d2025; border:1px solid #30343b; border-radius:9px; }
     .settings-group-title { color:#c4cbd5; font-size:10px; letter-spacing:.55px; margin:0 0 2px; }
-    .settings-row { min-height:27px; gap:12px; }
+    .settings-row { min-height:27px; gap:12px; display: flex; align-items: center; justify-content: space-between; }
+    .settings-row-vertical { display: flex; flex-direction: column; gap: 6px; }
     .settings-label { color:#e0e4e9; font-size:11px; font-weight:600; }
-    .settings-label small { color:#929aa6; font-size:9px; line-height:1.4; }
-    .toggle { width:32px;height:18px; }
-    .toggle .slider::before { width:12px;height:12px;left:3px;bottom:3px; }
-    .toggle input:checked + .slider { background:#667b91; }
-    .toggle input:checked + .slider::before { transform:translateX(14px); }
+    .settings-label small { color:#929aa6; font-size:9px; line-height:1.4; display: block; margin-top: 1px; }
+    .toggle { position: relative; width: 32px; height: 18px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .slider { position: absolute; inset: 0; background: rgba(255, 255, 255, 0.15); border-radius: 20px; cursor: pointer; transition: background 0.25s ease; }
+    .toggle .slider::before { content: ""; position: absolute; height: 12px; width: 12px; left: 3px; bottom: 3px; background: #e2e8f0; border-radius: 50%; transition: transform 0.25s ease, background 0.25s ease; }
+    .toggle input:checked + .slider { background: #667b91; }
+    .toggle input:checked + .slider::before { transform: translateX(14px); background: #ffffff; }
     .range-slider::-webkit-slider-thumb { background:#b6c0cc; }
     .range-value { color:#d4dae2; font-variant-numeric:tabular-nums; }
     .text-input,.select-input { background:#141619; border-color:#3a3f47; border-radius:6px; }
     .text-input:focus,.select-input:focus { border-color:#8997a8; }
     .settings-menu button:not(.settings-close) { border-radius:6px !important; }
-    .settings-menu .settings-label[style] { line-height:1.5; }
     @media (max-width:600px) {
       .settings-menu { top:56px; right:8px; width:calc(100vw - 16px); max-height:calc(100dvh - 66px); }
       .settings-menu-body { padding:8px; gap:7px; }
@@ -626,6 +552,11 @@
   <div style="background:rgba(18,18,18,0.95);color:#f1f5f9;padding:24px 36px;border-radius:14px;font-size:18px;font-weight:800;font-family:'Inter','Plus Jakarta Sans',sans-serif;border:2px solid #60a5fa;">
     Відпустіть файл налаштувань
   </div>
+</div>
+
+<!-- Окошко даты и времени слева сверху -->
+<div class="datetime-panel" id="datetime-panel">
+  <div class="datetime-text" id="datetime-text-view">Станом на 22.10.2026 17:24</div>
 </div>
 
 <button class="settings-btn" id="settings-btn" title="Налаштування">
@@ -800,6 +731,30 @@
   </div>
 
   <div class="settings-group">
+    <div class="settings-group-title">Менюшка часу (Станом на)</div>
+    <div class="settings-row">
+      <div class="settings-label">Показати час</div>
+      <label class="toggle">
+        <input type="checkbox" id="datetime-enabled" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label">Авто-обновлення часу
+        <small>Поточні реальні дані на хвилинній основі</small>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="datetime-auto-enabled" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="settings-row-vertical">
+      <div class="settings-label">Власний текст/формат (якщо вимкнено авто)</div>
+      <input type="text" id="datetime-text-input" class="text-input" value="Станом на 22.10.2026 17:24">
+    </div>
+  </div>
+
+  <div class="settings-group">
     <div class="settings-group-title">Водяний знак</div>
     <div class="settings-row">
       <div class="settings-label">Показати</div>
@@ -936,6 +891,7 @@
   </button>
 </div>
 
+<!-- Дисклеймер (слева снизу) -->
 <div class="legend-panel" id="legend-panel">
   <div class="disclaimer-text" id="disclaimer-text-view">Мапа не є військовою. Усі дані взяті з відкритих телеграм-каналів і можуть бути неточними.</div>
   <div class="legend-items" id="legend-items-view"></div>
@@ -947,7 +903,7 @@
   const SHOSTKA_CENTER = [33.4729, 51.8638];
   const TARGET_ZOOM = 9.3;
 
-  const STORAGE_KEY = 'shostka_map_settings_v11';
+  const STORAGE_KEY = 'shostka_map_settings_v12';
 
   let activeFeatures = [];
   let activeTrajectories = [];
@@ -1024,6 +980,13 @@
   const disclaimerTextView = document.getElementById('disclaimer-text-view');
   const legendItemsView = document.getElementById('legend-items-view');
 
+  // Datetime Panel Elements
+  const datetimeEnabled = document.getElementById('datetime-enabled');
+  const datetimeAutoEnabled = document.getElementById('datetime-auto-enabled');
+  const datetimeTextInput = document.getElementById('datetime-text-input');
+  const datetimePanel = document.getElementById('datetime-panel');
+  const datetimeTextView = document.getElementById('datetime-text-view');
+
   const watermarkEnabled = document.getElementById('watermark-enabled');
   const watermarkText = document.getElementById('watermark-text');
   const watermarkColor = document.getElementById('watermark-color');
@@ -1061,6 +1024,11 @@
       text: 'Мапа не є військовою. Усі дані взяті з відкритих телеграм-каналів і можуть бути неточними.',
       opacity: 95
     },
+    datetime: {
+      enabled: true,
+      auto: true,
+      text: 'Станом на 22.10.2026 17:24'
+    },
     watermark: {
       enabled: false,
       text: 'ШОСТКА • ОГЛЯД',
@@ -1089,6 +1057,7 @@
         gromady: { ...defaultSettings.gromady, ...(parsed.gromady || {}) },
         mask: { ...defaultSettings.mask, ...(parsed.mask || {}) },
         disclaimer: { ...defaultSettings.disclaimer, ...(parsed.disclaimer || {}) },
+        datetime: { ...defaultSettings.datetime, ...(parsed.datetime || {}) },
         watermark: { ...defaultSettings.watermark, ...(parsed.watermark || {}) },
         drone: { ...defaultSettings.drone, ...(parsed.drone || {}) }
       };
@@ -1130,6 +1099,11 @@
           text: disclaimerTextInput.value,
           opacity: parseInt(disclaimerOpacitySlider.value, 10)
         },
+        datetime: {
+          enabled: datetimeEnabled.checked,
+          auto: datetimeAutoEnabled.checked,
+          text: datetimeTextInput.value
+        },
         watermark: {
           enabled: watermarkEnabled.checked,
           text: watermarkText.value,
@@ -1160,6 +1134,34 @@
   });
 
   const watermarkLayer = document.getElementById('watermark-layer');
+
+  function updateDateTimeDisplay() {
+    if (!datetimeEnabled.checked) {
+      datetimePanel.style.display = 'none';
+      return;
+    }
+    datetimePanel.style.display = 'flex';
+
+    if (datetimeAutoEnabled.checked) {
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      const formatted = `Станом на ${dd}.${mm}.${yyyy} ${hh}:${min}`;
+      datetimeTextView.textContent = formatted;
+      datetimeTextInput.value = formatted;
+    } else {
+      datetimeTextView.textContent = datetimeTextInput.value;
+    }
+  }
+
+  setInterval(() => {
+    if (datetimeEnabled.checked && datetimeAutoEnabled.checked) {
+      updateDateTimeDisplay();
+    }
+  }, 10000);
 
   function renderDisclaimerPanel(featuresInBox = null) {
     const enabled = disclaimerEnabled.checked;
@@ -1353,6 +1355,13 @@
     disclaimerOpacitySlider.value = s.disclaimer.opacity;
     disclaimerOpacityValue.textContent = s.disclaimer.opacity + '%';
     renderDisclaimerPanel();
+
+    if (s.datetime) {
+      datetimeEnabled.checked = s.datetime.enabled !== false;
+      datetimeAutoEnabled.checked = s.datetime.auto !== false;
+      datetimeTextInput.value = s.datetime.text || 'Станом на 22.10.2026 17:24';
+    }
+    updateDateTimeDisplay();
 
     watermarkEnabled.checked = s.watermark.enabled;
     watermarkText.value = s.watermark.text;
@@ -1785,20 +1794,6 @@
           ctx.strokeStyle = '#b89dc8';
           ctx.lineWidth = 1.2 * dpr;
           ctx.stroke();
-
-          const iconHalfPx = 26 * dpr;
-          const labelBelowY = py + iconHalfPx + 2 * dpr;
-          const fontSize500 = 9 * dpr;
-          ctx.save();
-          ctx.font = `700 ${fontSize500}px "Plus Jakarta Sans", sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'top';
-          ctx.fillStyle = '#b89dc8';
-          ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-          ctx.lineWidth = 2 * dpr;
-          ctx.strokeText('', px, labelBelowY);
-          ctx.fillText('', px, labelBelowY);
-          ctx.restore();
         }
       });
     };
@@ -2109,14 +2104,7 @@
 
     applySettings(savedSettings);
 
-    [customPlacesEnabled, customPlacesDotsEnabled].forEach(el => {
-      el.addEventListener('change', () => {
-        updateCustomPlacesStyle();
-        saveSettings();
-      });
-    });
-
-    [customPlacesPosition].forEach(el => {
+    [customPlacesEnabled, customPlacesDotsEnabled, customPlacesPosition].forEach(el => {
       el.addEventListener('change', () => {
         updateCustomPlacesStyle();
         saveSettings();
@@ -2190,6 +2178,23 @@
       saveSettings();
     });
 
+    datetimeEnabled.addEventListener('change', () => {
+      updateDateTimeDisplay();
+      saveSettings();
+    });
+
+    datetimeAutoEnabled.addEventListener('change', () => {
+      updateDateTimeDisplay();
+      saveSettings();
+    });
+
+    datetimeTextInput.addEventListener('input', () => {
+      if (!datetimeAutoEnabled.checked) {
+        datetimeTextView.textContent = datetimeTextInput.value;
+      }
+      saveSettings();
+    });
+
     watermarkEnabled.addEventListener('change', () => {
       renderWatermark();
       saveSettings();
@@ -2211,7 +2216,7 @@
       saveSettings();
     });
 
-    watermarkSizeSlider.addEventListener('input', (e) => {
+    watermarkSizeSlider.addEventListener('input', () => {
       syncWatermarkUI();
       renderWatermark();
       saveSettings();
@@ -2340,6 +2345,7 @@
           gromady: { ...defaultSettings.gromady, ...(result.gromady || {}) },
           mask: { ...defaultSettings.mask, ...(result.mask || {}) },
           disclaimer: { ...defaultSettings.disclaimer, ...(result.disclaimer || {}) },
+          datetime: { ...defaultSettings.datetime, ...(result.datetime || {}) },
           watermark: { ...defaultSettings.watermark, ...(result.watermark || {}) },
           drone: { ...defaultSettings.drone, ...(result.drone || {}) }
         };
@@ -2349,6 +2355,7 @@
         updateGromadyStyle();
         updateMaskStyle();
         renderDisclaimerPanel();
+        updateDateTimeDisplay();
         renderWatermark();
         window.drawRadiusCanvas && window.drawRadiusCanvas();
         window.drawDroneCanvas && window.drawDroneCanvas();
@@ -2564,7 +2571,6 @@
     updateGromadyHighlight();
   }
 
-  // ===== КУРСИ — ГЕНЕРАЦІЯ ЗВІТУ =====
   function calculateDistanceKm(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -2596,7 +2602,6 @@
       return;
     }
 
-    // Допоміжна функція пошуку області для координат НП
     function findRegionForPoint(lng, lat) {
       for (const reg of regionsDataCache.features) {
         if (pointInFeature([lng, lat], reg)) {
@@ -2606,7 +2611,6 @@
       return 'Інша область';
     }
 
-    // Збираємо дані по кожному об'єкту
     const reportByRegion = {};
 
     activeFeatures.forEach(feat => {
@@ -2653,7 +2657,6 @@
       });
 
       matchedPlaces.sort((a, b) => a.distance - b.distance);
-
       const closestPlaces = matchedPlaces.slice(0, 1);
 
       if (closestPlaces.length > 0) {
@@ -2679,14 +2682,11 @@
       }
     });
 
-    // Формуємо кінцевий текстовий звіт з групуванням однаковіх типів + НП
     let reportLines = [];
     for (const [region, items] of Object.entries(reportByRegion)) {
-      // Прибираємо дублювання "область область", якщо назва області вже містить слово "область"
       const regionHeader = region.toLowerCase().includes('область') ? region : `${region} область`;
       reportLines.push(`${regionHeader}:`);
 
-      // Подсчет количества одинаковых (тип + НП)
       const counts = new Map();
       items.forEach(item => {
         const key = `${item.type}|${item.place || ''}`;
@@ -2707,7 +2707,6 @@
 
     const finalReportText = reportLines.join('\n');
 
-    // Копіюємо в буфер обміну та виводимо сповіщення
     try {
       await navigator.clipboard.writeText(finalReportText);
       const t = document.getElementById('toast');
@@ -2722,6 +2721,7 @@
     }
   }
 
+  // ===== МАКСИМАЛЬНОЕ КАЧЕСТВО СКРИНШОТА =====
   async function takeScreenshot() {
     if (document.getElementById('screenshot-selection-layer')) return;
 
@@ -2757,6 +2757,7 @@
       settingsBtn.style.display = oldSettingsBtnDisplay;
       settingsMenu.style.display = oldSettingsMenuDisplay;
       renderDisclaimerPanel();
+      updateDateTimeDisplay();
     };
 
     const drawRect = () => {
@@ -2829,6 +2830,7 @@
         const initialCanvas = map.getCanvas();
         const initialRect = initialCanvas.getBoundingClientRect();
         originalPixelRatio = initialCanvas.width / Math.max(1, initialRect.width);
+        
         const scale = Math.min(4, 3840 / Math.max(width, height));
 
         if (typeof map.setPixelRatio === 'function') {
@@ -2863,6 +2865,7 @@
         const sy = Math.max(0, Math.round((top - mapCanvasRect.top) * dprY));
         const sw = Math.max(1, Math.min(Math.round(width * dprX), mapCanvas.width - sx));
         const sh = Math.max(1, Math.min(Math.round(height * dprY), mapCanvas.height - sy));
+        
         const out = document.createElement('canvas');
         out.width = Math.max(1, Math.round(width * scale));
         out.height = Math.max(1, Math.round(height * scale));
@@ -2889,6 +2892,7 @@
         ctx.save();
         ctx.scale(scale, scale);
 
+        // Отрисовка дисклеймера
         if (disclaimerEnabled.checked) {
           try {
             const discRect = legendPanel.getBoundingClientRect();
@@ -2896,16 +2900,16 @@
             const discTop = discRect.top - top;
 
             const discOpacity = parseInt(disclaimerOpacitySlider.value, 10) / 100;
-            const pad = 12;
-            const maxBoxW = Math.min(340, width - 20);
+            const pad = 10;
+            const boxW = 280;
 
             ctx.save();
-            ctx.font = '700 11.5px "Plus Jakarta Sans", sans-serif';
+            ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
             const text = disclaimerTextInput.value;
             const words = text.split(' ');
             const lines = [];
             let currentLine = '';
-            const maxTextW = maxBoxW - pad * 2;
+            const maxTextW = boxW - pad * 2;
             for (const word of words) {
               const testLine = currentLine ? currentLine + ' ' + word : word;
               if (ctx.measureText(testLine).width > maxTextW && currentLine) {
@@ -2918,7 +2922,7 @@
             if (currentLine) lines.push(currentLine);
             ctx.restore();
 
-            const lineH = 15;
+            const lineH = 14;
             const textBlockH = lines.length * lineH;
 
             const uniqueTypes = [];
@@ -2932,10 +2936,9 @@
               }
             });
 
-            const iconSize = 18;
-            const iconRowH = uniqueTypes.length > 0 ? iconSize + 10 : 0;
-            const boxH = pad + textBlockH + (iconRowH > 0 ? 8 + iconRowH : 0) + pad;
-            const boxW = maxBoxW;
+            const iconSize = 17;
+            const iconRowH = uniqueTypes.length > 0 ? iconSize + 6 : 0;
+            const boxH = pad + textBlockH + (iconRowH > 0 ? 6 + iconRowH : 0) + pad;
             const discX = Math.max(10, discLeft);
             const discY = Math.min(height - boxH - 10, Math.max(10, discTop));
 
@@ -2959,7 +2962,7 @@
             ctx.stroke();
 
             ctx.fillStyle = '#1a1a1a';
-            ctx.font = '700 11.5px "Plus Jakarta Sans", sans-serif';
+            ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
             lines.forEach((line, i) => {
@@ -2967,27 +2970,69 @@
             });
 
             if (uniqueTypes.length > 0) {
-              const iconY = discY + pad + textBlockH + 8;
+              const iconY = discY + pad + textBlockH + 6;
               let iconX = discX + pad;
-              const iconLabelFont = '700 10px "Plus Jakarta Sans", sans-serif';
-              ctx.font = iconLabelFont;
+              ctx.font = '800 12px "Plus Jakarta Sans", sans-serif';
 
               for (const { typeName, fileName } of uniqueTypes) {
                 try {
                   const imgEls = document.querySelectorAll(`img[src="icons/${fileName}"]`);
                   if (imgEls.length > 0 && imgEls[0].complete && imgEls[0].naturalWidth > 0) {
                     ctx.drawImage(imgEls[0], iconX, iconY, iconSize, iconSize);
-                    iconX += iconSize + 3;
+                    iconX += iconSize + 5;
                   }
                 } catch(ie) {}
                 ctx.fillStyle = '#0f172a';
-                ctx.font = '800 10.5px "Plus Jakarta Sans", sans-serif';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(typeName, iconX, iconY + iconSize / 2);
-                iconX += ctx.measureText(typeName).width + 14;
+                iconX += ctx.measureText(typeName).width + 12;
                 if (iconX > discX + boxW - pad) break;
               }
             }
+
+            ctx.restore();
+          } catch(e) {}
+        }
+
+        // Отрисовка времени слева сверху в один рядок шрифтом Inter
+        if (datetimeEnabled.checked) {
+          try {
+            const dtRect = datetimePanel.getBoundingClientRect();
+            const dtLeft = dtRect.left - left;
+            const dtTop = dtRect.top - top;
+
+            const padX = 12;
+            const padY = 6;
+            ctx.save();
+            ctx.font = '700 11px "Inter", sans-serif';
+            const textContent = datetimeTextView.textContent;
+            const textWidth = ctx.measureText(textContent).width;
+            const boxW = textWidth + padX * 2;
+            const boxH = 26;
+
+            const dtX = Math.max(10, dtLeft);
+            const dtY = Math.max(10, dtTop);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = 'rgba(0,0,0,0.25)';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+              ctx.roundRect(dtX, dtY, boxW, boxH, 8);
+            } else {
+              ctx.rect(dtX, dtY, boxW, boxH);
+            }
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+            ctx.stroke();
+
+            ctx.fillStyle = '#1a1a1a';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(textContent, dtX + padX, dtY + boxH / 2);
 
             ctx.restore();
           } catch(e) {}
@@ -3011,7 +3056,7 @@
             const cellH = screenH / rows;
 
             ctx.save();
-            ctx.font = `800 ${wmSize}px "Plus Jakarta Sans", sans-serif`;
+            ctx.font = `800 ${wmSize}px "Inter", "Plus Jakarta Sans", sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = wmColor;
